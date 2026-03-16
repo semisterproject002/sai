@@ -18,6 +18,7 @@ from kisan1.models import (
 )
 from kisan1.views.shared import (
     can_attempt_login,
+    check_login,
     can_send_otp,
     clear_login_attempts,
     create_otp_session_payload,
@@ -96,8 +97,9 @@ def _set_otp_back_target(request, session_key):
 
 
 def otp_back(request):
-    target = request.session.get('otp_back_url') or request.session.get('login_otp_back_url') or 'register_choice'
-    if target == request.path:
+    target = request.session.get('otp_back_url') or request.session.get('login_otp_back_url')
+    unsafe_targets = {'/verify-otp/', '/verify-otp-login/', request.path}
+    if not target or target in unsafe_targets:
         return redirect('register_choice')
     return redirect(target)
 
@@ -307,6 +309,8 @@ def handle_registration(request, role, template_name):
             messages.error(request, 'Too many OTP requests. Please wait a few minutes and try again.')
             return render(request, template_name)
 
+        request.session.pop('login_otp_attempts', None)
+
         # 4-digit OTP
         otp_payload = create_otp_session_payload()
         request.session['reg_otp'] = otp_payload
@@ -451,6 +455,13 @@ def verify_otp(request):
 
 
 def login_view(request):
+    if check_login(request):
+        role = request.session.get('active_role') or request.session.get('role')
+        if role == 'farmer':
+            return redirect('main_home')
+        if role:
+            return redirect('dashboard', role=role)
+
     if request.method == "POST":
         mobile = request.POST.get('mobile', '').strip()
         role = request.POST.get('role', '').strip()
@@ -471,6 +482,8 @@ def login_view(request):
         if not can_send_otp(mobile, context='login'):
             messages.error(request, 'Too many OTP requests. Please wait a few minutes and try again.', extra_tags='login')
             return render(request, 'kisan1/login.html')
+
+        request.session.pop('login_otp_attempts', None)
 
         # 4-digit OTP
         otp_payload = create_otp_session_payload()

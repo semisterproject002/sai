@@ -254,7 +254,7 @@
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">{% trans "Back" %}</button>
+    <a href="{% url 'welcome' %}" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">← {% trans "Back" %}</a>
     <header>
         <h2>{% trans "Select Your Role" %}</h2>
         <p>{% trans "Your journey with Kisan Asara starts here" %}</p>

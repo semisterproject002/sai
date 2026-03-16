@@ -1,4 +1,5 @@
 from django import forms
+from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 
 from kisan1.models import (
@@ -50,13 +51,25 @@ class ShopItemForm(forms.ModelForm):
             'item_name': forms.TextInput(attrs={'class': 'form-control'}),
             'category': forms.TextInput(attrs={'class': 'form-control'}),
             'price': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
-            'stock_quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+            'stock_quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
         }
 
     def clean_item_name(self):
         value = (self.cleaned_data.get('item_name') or '').strip()
         if len(value) < 2:
             raise forms.ValidationError('Item name must be at least 2 characters.')
+        return value
+
+    def clean_price(self):
+        value = self.cleaned_data.get('price')
+        if value is None or value <= 0:
+            raise ValidationError('Price must be greater than 0.')
+        return value
+
+    def clean_stock_quantity(self):
+        value = self.cleaned_data.get('stock_quantity')
+        if value is None or value <= 0:
+            raise ValidationError('Stock quantity must be greater than 0.')
         return value
 
 
@@ -73,6 +86,6 @@ class TractorBookingRequestForm(forms.ModelForm):
 
 
 class ServiceSettingsForm(forms.Form):
-    rate = forms.IntegerField(min_value=0)
+    rate = forms.IntegerField(min_value=1)
     is_available = forms.BooleanField(required=False)
     service_status = forms.ChoiceField(choices=[('Active', 'Active'), ('Paused', 'Paused')])

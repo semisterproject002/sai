@@ -6,7 +6,7 @@ from django.db.models import Count, Sum
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.core.paginator import Paginator
-from kisan1.forms import LaborBookingRequestForm, ServiceSettingsForm, TractorBookingRequestForm
+from kisan1.forms import LaborBookingRequestForm, ServiceSettingsForm, ShopItemForm, TractorBookingRequestForm
 
 from kisan1.models import (
     BookingStatus,
@@ -213,35 +213,37 @@ def dashboard(request, role):
     elif role == 'pesticide':
         shop_profile = PesticideProfile.objects.filter(user=user_profile).first()
         if request.method == 'POST' and 'add_product' in request.POST:
-            item_name = (request.POST.get('item_name') or '').strip()
-            category = (request.POST.get('category') or '').strip()
-            price = _parse_positive_int(request.POST.get('price'), default=0)
-            stock_quantity = _parse_positive_int(request.POST.get('stock_quantity'), default=0)
-            normalized_categories = _expand_product_categories(category)
-
             if not shop_profile:
                 messages.error(request, 'Complete P&F registration first to manage inventory.')
-            elif not item_name or not normalized_categories or price <= 0 or stock_quantity <= 0:
-                messages.error(request, 'Please provide valid product, category, price, and stock quantity.')
             else:
-                inventory_item = None
-                created = False
-                for normalized_category in normalized_categories:
-                    inventory_item, item_created = PesticideInventory.objects.update_or_create(
-                        shop=user_profile,
-                        item_name=item_name,
-                        category=normalized_category,
-                        defaults={
-                            'price': price,
-                            'stock_quantity': stock_quantity,
-                        },
-                    )
-                    created = created or item_created
+                item_form = ShopItemForm(request.POST)
+                if not item_form.is_valid():
+                    messages.error(request, 'Please provide valid product, category, price, and stock quantity.')
+                else:
+                    item_name = item_form.cleaned_data['item_name']
+                    category = item_form.cleaned_data['category']
+                    price = item_form.cleaned_data['price']
+                    stock_quantity = item_form.cleaned_data['stock_quantity']
+                    normalized_categories = _expand_product_categories(category)
 
-                _sync_shop_available_products(shop_profile)
-                action = 'added' if created else 'updated'
-                messages.success(request, f"Product '{inventory_item.item_name}' {action} in inventory.")
-                return redirect('dashboard', role='pesticide')
+                    inventory_item = None
+                    created = False
+                    for normalized_category in normalized_categories:
+                        inventory_item, item_created = PesticideInventory.objects.update_or_create(
+                            shop=user_profile,
+                            item_name=item_name,
+                            category=normalized_category,
+                            defaults={
+                                'price': price,
+                                'stock_quantity': stock_quantity,
+                            },
+                        )
+                        created = created or item_created
+
+                    _sync_shop_available_products(shop_profile)
+                    action = 'added' if created else 'updated'
+                    messages.success(request, f"Product '{inventory_item.item_name}' {action} in inventory.")
+                    return redirect('dashboard', role='pesticide')
 
         context['shop'] = shop_profile
         context['inventory'] = PesticideInventory.objects.filter(shop=user_profile).order_by('item_name')
