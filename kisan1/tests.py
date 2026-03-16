@@ -102,7 +102,7 @@ class KisanAsaraTests(TestCase):
         payload = {
             'name': 'Ramesh Kumar', 'mobile': '9123456789', 'age': '30', 
             'gender': 'Male', 'passbook': 'T12345678901', 'state': 'Telangana', 
-            'district': 'Nizamabad', 'mandal': 'Armoor', 'village': 'Perkit',
+            'district': 'Nizamabad', 'mandal': 'Armoor', 'village': 'Perkit', 'pincode': '503001',
         }
         response = self.client.post(reverse('farmer_register'), payload)
         self.assertEqual(response.status_code, 302)
@@ -137,7 +137,7 @@ class KisanAsaraTests(TestCase):
         response = self.client.post(reverse('book_labor', args=[self.labor_profile.id]), {
             'duration': '2', 'booking_date': '2026-03-10', 'start_time': '10:00', 'location': 'Farm Plot 12',
         })
-        self.assertRedirects(response, reverse('booking_success')) # FIXED: Redirects to booking_success now
+        self.assertRedirects(response, reverse('order_success'))
         self.assertEqual(LaborBooking.objects.filter(farmer=self.farmer, laborer=self.labor_profile).count(), 1)
 
     def test_book_tractor_creates_booking_and_order(self):
@@ -145,7 +145,7 @@ class KisanAsaraTests(TestCase):
         response = self.client.post(reverse('book_tractor', args=[self.tractor_profile.id]), {
             'duration_hours': '3', 'booking_date': '2026-03-11', 'start_time': '09:00', 'location': 'Field 7',
         })
-        self.assertRedirects(response, reverse('booking_success')) # FIXED
+        self.assertRedirects(response, reverse('order_success'))
         self.assertEqual(TractorBooking.objects.filter(farmer=self.farmer, tractor_owner=self.tractor_profile).count(), 1)
 
     def test_book_tools_and_lease_create_records(self):
@@ -153,12 +153,12 @@ class KisanAsaraTests(TestCase):
         tools_response = self.client.post(reverse('book_tool', args=[self.tools_profile.id]), {
             'receive_date': '2026-03-12', 'return_date': '2026-03-13', 'tool_Tractor': 'Tractor', 'hours_Tractor': '2',
         })
-        self.assertRedirects(tools_response, reverse('booking_success')) # FIXED
+        self.assertRedirects(tools_response, reverse('order_success'))
 
         lease_response = self.client.post(reverse('request_lease', args=[self.lease_profile.id]), {
             'soil_type_requested': 'Red Soil', 'duration_months': '6', 'start_date': '2026-04-01', 'message_to_owner': 'Need fertile land',
         })
-        self.assertRedirects(lease_response, reverse('booking_success')) # FIXED
+        self.assertRedirects(lease_response, reverse('order_success'))
         self.assertEqual(LeaseLandRequest.objects.filter(farmer=self.farmer, land=self.lease_profile).count(), 1)
 
     def test_shop_cart_checkout_creates_shoporder_and_order(self):
@@ -169,7 +169,7 @@ class KisanAsaraTests(TestCase):
         self.assertRedirects(add_to_cart, reverse('cart'))
 
         checkout = self.client.post(reverse('cart'), {'confirm_checkout': '1'})
-        self.assertRedirects(checkout, reverse('order_success')) # Shop uses order_success!
+        self.assertRedirects(checkout, reverse('booking_success'))
         self.assertEqual(ShopOrder.objects.filter(farmer=self.farmer, shop=self.shop_profile).count(), 1)
 
     def test_self_booking_is_blocked(self):
@@ -235,8 +235,37 @@ class KisanAsaraTests(TestCase):
 
     def test_all_registration_posts_redirect_to_verify_otp(self):
         cases = [
-            ('tractor_register', {'name': 'Tractor Driver', 'mobile': '9234567890', 'age': '28'}),
-            ('labor_register', {'name': 'Labor Person', 'mobile': '9345678901', 'age': '25'}),
+            ('tractor_register', {
+                'name': 'Tractor Driver',
+                'mobile': '9234567890',
+                'age': '28',
+                'pincode': '503001',
+                'state': 'Telangana',
+                'district': 'Nizamabad',
+                'mandal': 'Armoor',
+                'village': 'Perkit',
+                'base_wage': '500',
+                'driving_license': 'TS0520230000123',
+                'experience': '4',
+                'services': ['Ploughing'],
+                'exp_Ploughing': '2',
+                'wage_Ploughing': '500',
+            }),
+            ('labor_register', {
+                'name': 'Labor Person',
+                'mobile': '9345678901',
+                'age': '25',
+                'pincode': '503001',
+                'state': 'Telangana',
+                'district': 'Nizamabad',
+                'mandal': 'Armoor',
+                'village': 'Perkit',
+                'gender': 'Male',
+                'wage_amount': '450',
+                'wage_type': 'Per Day',
+                'skills': ['Ploughing'],
+                'exp_Ploughing': '2',
+            }),
         ]
         for route, payload in cases:
             with self.subTest(route=route):
@@ -274,7 +303,7 @@ class KisanAsaraTests(TestCase):
 
         response = self.client.post(reverse('cart'), {'confirm_checkout': '1'})
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('order_success'))
+        self.assertRedirects(response, reverse('booking_success'))
         self.assertEqual(ShopOrder.objects.filter(farmer=farmer, shop=shop_profile).count(), 1)
 
     def test_login_otp_rate_limit_blocks_spam(self):
@@ -304,6 +333,7 @@ class KisanAsaraTests(TestCase):
         self.assertContains(dashboard, 'Starter Combo')
 
     def test_new_service_pincodes_are_available(self):
+        load_telangana_pincodes(force=True)
         for pincode in ['50300', '503306', '502316', '502331', '502286', '503001', '503002']:
             response = self.client.get(reverse('get_location_api'), {'pincode': pincode})
             self.assertEqual(response.status_code, 200)
@@ -369,6 +399,7 @@ class SecurityEnhancementTests(TestCase):
             'exp_Ploughing': '2',
             'wage_Ploughing': '500',
             'experience': '2',
+            'pincode': '503001',
         })
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse('verify_otp'))
