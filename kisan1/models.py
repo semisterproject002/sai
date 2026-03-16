@@ -107,7 +107,7 @@ class Order(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.user.name} → {self.provider.name} ({self.service_type})"
+        return f"{self.user.name} -> {self.provider.name} ({self.service_type})"
 class PesticideProfile(models.Model):
     user = models.OneToOneField(UserRegistration, on_delete=models.CASCADE, related_name='pesticide_details')
     shop_name = models.CharField(max_length=150)

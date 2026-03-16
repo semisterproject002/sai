@@ -1,4 +1,4 @@
-{% load i18n %}
+﻿{% load i18n %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -44,7 +44,7 @@
             to { transform: scale(1.15); }
         }
 
-        /* ✅ Language Dropdown Styling (Blends with your theme) */
+        /* Language Dropdown Styling (Blends with your theme) */
         .language-switcher {
             position: absolute;
             top: 25px;
@@ -174,7 +174,7 @@
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">← Back</button>
+    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">Back</button>
 
     <div class="hero-bg"></div>
 
@@ -199,7 +199,7 @@
         <div class="welcome-text">
             <h1>{% trans "Kisan Asara" %}</h1>
         </div>
-        <p>{% trans "Empowering Farmers • Supporting Agriculture" %}</p>
+        <p>{% trans "Empowering Farmers - Supporting Agriculture" %}</p>
 
         <div class="btn-container">
             <a href="{% url 'login' %}" class="btn">
@@ -213,8 +213,9 @@
     </div>
 
     <div class="decoration">
-        {% trans "SMART FARMING • SECURE FUTURE" %}
+        {% trans "SMART FARMING - SECURE FUTURE" %}
     </div>
 
 </body>
 </html>
+

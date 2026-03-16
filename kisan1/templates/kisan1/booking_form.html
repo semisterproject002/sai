@@ -1,4 +1,4 @@
-{% load i18n %}
+﻿{% load i18n %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -135,8 +135,7 @@
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">← Back</button>
-    {% include 'kisan1/partials/language_toggle.html' %}
+    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">Back</button>
     <div class="card">
         <h2>{% trans "Book" %} {{ service_type|title }}</h2>
 
@@ -160,10 +159,10 @@
                 <span
                     style="font-size: 11px; color: #aaa; display: block; text-transform: uppercase; margin-bottom: 5px;">{%
                     trans "Total Amount" %}</span>
-                ₹ <span id="totalAmount">0</span>
+                Rs. <span id="totalAmount">0</span>
             </div>
 
-            <button type="submit" class="btn">{% trans "Confirm Booking ➔" %}</button>
+            <button type="submit" class="btn">{% trans "Confirm Booking" %}</button>
         </form>
     </div>
 
@@ -182,3 +181,5 @@
 </body>
 
 </html>
+
+

@@ -107,7 +107,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'kisan1',
+    'kisan1.apps.Kisan1Config',
 ]
 
 MIDDLEWARE = [
@@ -136,6 +136,7 @@ TEMPLATES = [
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
+                'django.template.context_processors.i18n',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -241,5 +242,6 @@ if LOG_LEVEL not in {'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'}:
 OTP_REQUEST_LIMIT = int(os.getenv('OTP_REQUEST_LIMIT', '5'))
 OTP_REQUEST_WINDOW_SECONDS = int(os.getenv('OTP_REQUEST_WINDOW_SECONDS', '300'))
 OTP_TTL_SECONDS = int(os.getenv('OTP_TTL_SECONDS', '300'))
+OTP_ATTEMPT_LIMIT = int(os.getenv('OTP_ATTEMPT_LIMIT', '5'))
 LOGIN_ATTEMPT_LIMIT = int(os.getenv('LOGIN_ATTEMPT_LIMIT', '5'))
 LOGIN_ATTEMPT_WINDOW_SECONDS = int(os.getenv('LOGIN_ATTEMPT_WINDOW_SECONDS', '900'))

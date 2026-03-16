@@ -1,4 +1,4 @@
-{% load static %}
+﻿{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -11,7 +11,6 @@
 </head>
 
 <body class="animate-fade-in">
-    {% include 'kisan1/partials/language_toggle.html' %}
     {% block background_overlay %}
     {% endblock %}
 
@@ -19,6 +18,24 @@
     {% endblock %}
 
     <script src="{% static 'js/floating_particles.js' %}"></script>
+    <script>
+        document.querySelectorAll('.menu-container').forEach((container) => {
+            const trigger = container.querySelector('button');
+            if (!trigger) {
+                return;
+            }
+            trigger.addEventListener('click', (event) => {
+                event.stopPropagation();
+                container.classList.toggle('is-open');
+            });
+        });
+
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.menu-container.is-open').forEach((container) => {
+                container.classList.remove('is-open');
+            });
+        });
+    </script>
 </body>
 
 </html>

@@ -79,6 +79,29 @@ def create_otp_session_payload():
     return {'code': otp, 'expires_at': expires_at}
 
 
+def get_otp_remaining_seconds(payload):
+    if not payload or isinstance(payload, str):
+        return None
+    expires_at = payload.get('expires_at')
+    if not expires_at:
+        return None
+    try:
+        expires_at_dt = timezone.datetime.fromisoformat(expires_at)
+    except ValueError:
+        return None
+    if timezone.is_naive(expires_at_dt):
+        expires_at_dt = timezone.make_aware(expires_at_dt, timezone.get_current_timezone())
+    remaining = int((expires_at_dt - timezone.now()).total_seconds())
+    return max(0, remaining)
+
+
+def is_otp_expired(payload):
+    remaining = get_otp_remaining_seconds(payload)
+    if remaining is None:
+        return False
+    return remaining <= 0
+
+
 def is_otp_valid(payload, provided_otp):
     if not payload or not provided_otp:
         return False

@@ -1,4 +1,4 @@
-{% load i18n %}
+﻿{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -238,18 +238,35 @@
             header h2 {
                 font-size: 28px;
             }
+
+            .otp-alert {
+                background: #ffebee;
+                color: #c62828;
+                padding: 10px 14px;
+                border-radius: 10px;
+                font-weight: 600;
+                text-align: center;
+                margin: 0 auto 20px;
+                max-width: 420px;
+            }
         }
     </style>
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">← Back</button>
-    {% include 'kisan1/partials/language_toggle.html' %}
-
+    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">{% trans "Back" %}</button>
     <header>
         <h2>{% trans "Select Your Role" %}</h2>
         <p>{% trans "Your journey with Kisan Asara starts here" %}</p>
     </header>
+
+    {% if messages %}
+    {% for message in messages %}
+    {% if 'otp' in message.tags %}
+    <div class="otp-alert">{{ message }}</div>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
 
     <div class="container">
 
@@ -300,3 +317,4 @@
 </body>
 
 </html>
+

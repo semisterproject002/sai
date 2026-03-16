@@ -1,4 +1,4 @@
-{% load static %}
+﻿{% load static %}
 {% load i18n %}
 <!DOCTYPE html>
 <html lang="en">
@@ -80,28 +80,43 @@
         .btn-verify:hover { background: #1b5e20; transform: scale(1.02); }
 
         .error { color: #d32f2f; font-size: 13px; font-weight: 600; margin-bottom: 15px; display: block; }
+        .otp-meta { margin: 12px 0 18px; display: grid; gap: 6px; font-size: 13px; color: #2e3f38; }
+        .otp-meta .otp-row { display: flex; justify-content: space-between; }
+        .btn-verify:disabled { opacity: 0.6; cursor: not-allowed; }
 
         .back-btn {position: absolute; top: 24px; left: 24px; background: rgba(255,255,255,0.9); color: var(--dark-green, #0b2e24); text-decoration: none; padding: 10px 14px; border-radius: 10px; font-weight: 700; box-shadow: 0 6px 14px rgba(0,0,0,0.15);}
     </style>
 </head>
 <body>
-    {% include 'kisan1/partials/language_toggle.html' %}
-    <a href="{% url 'otp_back' %}" class="back-btn">⬅ Back</a>
+    <a href="{% url 'otp_back' %}" class="back-btn">Back</a>
     <div class="otp-card">
-        <span class="key-icon">🔑</span>
+        <span class="key-icon">OTP</span>
         <h2>{% trans "Verify OTP" %}</h2>
         <p>{% trans "Enter the 4-digit code sent to your terminal" %}</p>
 
         {% if error %}
-            <span class="error">⚠️ {{ error }}</span>
+            <span class="error">{% trans "Error:" %} {{ error }}</span>
         {% endif %}
         {% if messages %}
     <div style="margin-bottom: 15px;">
         {% for message in messages %}
+            {% if 'otp' in message.tags %}
             <p style="color: red; font-weight: bold; text-align: center;">{{ message }}</p>
+            {% endif %}
         {% endfor %}
     </div>
 {% endif %}
+
+        <div class="otp-meta">
+            <div class="otp-row">
+                <span>{% trans "Attempts left:" %}</span>
+                <strong id="otp-attempts" data-attempts-left="{{ otp_attempts_left|default:'0' }}">{{ otp_attempts_left|default:"0" }}</strong>
+            </div>
+            <div class="otp-row">
+                <span>{% trans "Time remaining:" %}</span>
+                <strong id="otp-timer" data-remaining="{{ otp_remaining_seconds|default:'' }}">--:--</strong>
+            </div>
+        </div>
 
         <form method="POST" action="{% url 'verify_otp' %}">
             {% csrf_token %}
@@ -109,5 +124,44 @@
             <button type="submit" class="btn-verify">{% trans "VERIFY & REGISTER" %}</button>
         </form>
     </div>
+    <script>
+        (function () {
+            const timerEl = document.getElementById('otp-timer');
+            const attemptsEl = document.getElementById('otp-attempts');
+            const submitBtn = document.querySelector('.btn-verify');
+            if (!timerEl || !attemptsEl) {
+                return;
+            }
+
+            let remaining = parseInt(timerEl.dataset.remaining, 10);
+            const attemptsLeft = parseInt(attemptsEl.dataset.attemptsLeft, 10);
+
+            const formatTime = (seconds) => {
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.max(0, seconds % 60);
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            };
+
+            if (!Number.isNaN(remaining)) {
+                timerEl.textContent = remaining > 0 ? formatTime(remaining) : '{% trans "Expired" %}';
+                const interval = setInterval(() => {
+                    remaining -= 1;
+                    if (remaining <= 0) {
+                        timerEl.textContent = '{% trans "Expired" %}';
+                        if (submitBtn) submitBtn.disabled = true;
+                        clearInterval(interval);
+                    } else {
+                        timerEl.textContent = formatTime(remaining);
+                    }
+                }, 1000);
+            }
+
+            if (!Number.isNaN(attemptsLeft) && attemptsLeft <= 0 && submitBtn) {
+                submitBtn.disabled = true;
+            }
+        })();
+    </script>
 </body>
 </html>
+
+

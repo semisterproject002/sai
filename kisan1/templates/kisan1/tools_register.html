@@ -1,4 +1,4 @@
-{% load i18n %}
+﻿{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -220,9 +220,7 @@
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">← Back</button>
-    {% include 'kisan1/partials/language_toggle.html' %}
-
+    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">{% trans "Back" %}</button>
     <div class="reg-card">
         <h2>{% trans "Tool Shop Register" %}</h2>
         <p>{% trans "List your farming tools and equipment for rent" %}</p>
@@ -234,49 +232,49 @@
             <div class="form-group">
                 <label>{% trans "Full Name (Owner):" %}</label>
                 <input type="text" name="name" placeholder="{% trans 'e.g., Ramesh Kumar' %}" pattern="[A-Za-z\s]{3,50}"
-                    required>
+                    minlength="3" maxlength="50" autocomplete="name" required>
             </div>
 
             <div class="form-group">
                 <label>{% trans "Shop Name:" %}</label>
-                <input type="text" name="shop_name" placeholder="{% trans 'e.g., Kisan Tool Rentals' %}" required>
+                <input type="text" name="shop_name" placeholder="{% trans 'e.g., Kisan Tool Rentals' %}"
+                    minlength="3" maxlength="100" autocomplete="organization" required>
             </div>
 
             <div class="input-row">
                 <div class="form-group">
                     <label>{% trans "Age:" %}</label>
-                    <input type="number" name="age" min="18" max="60" placeholder="{% trans '18-60' %}" required>
+                    <input type="number" name="age" min="18" max="100" step="1" inputmode="numeric"
+                        placeholder="{% trans '18-100' %}" required>
                 </div>
                 <div class="form-group">
                     <label>{% trans "Mobile No:" %}</label>
-                    <input type="tel" name="mobile" maxlength="10" placeholder="{% trans '10-digit number' %}"
-                        pattern="[6789][0-9]{9}" required>
+                    <input type="tel" name="mobile" minlength="10" maxlength="10" inputmode="numeric" autocomplete="tel"
+                        placeholder="{% trans '10-digit number' %}" pattern="[6789][0-9]{9}" required>
                 </div>
             </div>
 
             <div class="form-group">
                 <label>{% trans "Pincode (Try: 503224, 506002, 500038):" %}</label>
                 <input type="text" id="pincode" name="pincode" placeholder="{% trans 'Enter 6-digit Pincode' %}"
-                    maxlength="6" pattern="[0-9]{6}" oninput="fetchLocationDetails()" required>
+                    minlength="6" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" oninput="fetchLocationDetails()" required>
             </div>
 
             <div class="input-row">
                 <div class="form-group">
                     <label>{% trans "State:" %}</label>
-                    <input type="text" id="state" name="state" value="Telangana" readonly>
+                    <input type="text" id="state" name="state" value="Telangana" maxlength="100" readonly required>
                 </div>
                 <div class="form-group">
                     <label>{% trans "District:" %}</label>
-                    <input type="text" id="district" name="district" placeholder="{% trans 'Auto-filled' %}" readonly
-                        required>
+                    <input type="text" id="district" name="district" placeholder="{% trans 'Auto-filled' %}" maxlength="100" readonly required>
                 </div>
             </div>
 
             <div class="input-row">
                 <div class="form-group">
                     <label>{% trans "Mandal:" %}</label>
-                    <input type="text" id="mandal" name="mandal" placeholder="{% trans 'Auto-filled' %}" readonly
-                        required>
+                    <input type="text" id="mandal" name="mandal" placeholder="{% trans 'Auto-filled' %}" maxlength="100" readonly required>
                 </div>
                 <div class="form-group">
                     <label>{% trans "Village:" %}</label>
@@ -296,8 +294,8 @@
                             <label for="tool1">{% trans "Tractor" %}</label>
                         </div>
                         <div class="service-inputs">
-                            <input type="number" name="cost_Tractor" min="1"
-                                placeholder="{% trans 'Rent per hour (₹)' %}">
+                            <input type="number" name="cost_Tractor" min="1" max="100000" step="1" inputmode="numeric"
+                                placeholder="{% trans 'Rent per hour (Rs.)' %}">
                         </div>
                     </div>
 
@@ -307,8 +305,8 @@
                             <label for="tool2">{% trans "Harvester" %}</label>
                         </div>
                         <div class="service-inputs">
-                            <input type="number" name="cost_Harvester" min="1"
-                                placeholder="{% trans 'Rent per hour (₹)' %}">
+                            <input type="number" name="cost_Harvester" min="1" max="100000" step="1" inputmode="numeric"
+                                placeholder="{% trans 'Rent per hour (Rs.)' %}">
                         </div>
                     </div>
 
@@ -318,8 +316,8 @@
                             <label for="tool3">{% trans "Plough" %}</label>
                         </div>
                         <div class="service-inputs">
-                            <input type="number" name="cost_Plough" min="1"
-                                placeholder="{% trans 'Rent per hour (₹)' %}">
+                            <input type="number" name="cost_Plough" min="1" max="100000" step="1" inputmode="numeric"
+                                placeholder="{% trans 'Rent per hour (Rs.)' %}">
                         </div>
                     </div>
 
@@ -329,19 +327,47 @@
                             <label for="tool4">{% trans "Rotavator" %}</label>
                         </div>
                         <div class="service-inputs">
-                            <input type="number" name="cost_Rotavator" min="1"
-                                placeholder="{% trans 'Rent per hour (₹)' %}">
+                            <input type="number" name="cost_Rotavator" min="1" max="100000" step="1" inputmode="numeric"
+                                placeholder="{% trans 'Rent per hour (Rs.)' %}">
                         </div>
                     </div>
 
                 </div>
             </div>
 
-            <button type="submit" class="btn-next">{% trans "Register ➔" %}</button>
+            <button type="submit" class="btn-next">{% trans "Register" %}</button>
         </form>
     </div>
 
     <script src="{% static 'js/location.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.querySelector('form');
+            if (!form) {
+                return;
+            }
+
+            form.addEventListener('submit', function (event) {
+                const selectedTools = Array.from(document.querySelectorAll('input[name="tools"]:checked'));
+
+                if (selectedTools.length === 0) {
+                    event.preventDefault();
+                    alert('{% trans "Please select at least one tool to continue." %}');
+                    return;
+                }
+
+                for (const tool of selectedTools) {
+                    const costField = document.querySelector(`input[name="cost_${tool.value}"]`);
+                    if (!costField || costField.value.trim() === "") {
+                        event.preventDefault();
+                        alert('{% trans "Please enter rent per hour for:" %} ' + tool.value);
+                        return;
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>
+

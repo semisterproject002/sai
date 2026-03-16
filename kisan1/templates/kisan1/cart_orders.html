@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -416,9 +416,7 @@
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">← Back</button>
-    {% include 'kisan1/partials/language_toggle.html' %}
-
+    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">Back</button>
     <div class="sidebar">
         <div class="brand">Kisan Asara</div>
         <a href="{% url 'main_home' %}" class="nav-item"><i class="fas fa-home"></i> Home</a>
@@ -469,7 +467,7 @@
                         <div
                             style="margin-top: 20px; font-size: 24px; font-weight: 700; color: var(--primary-color); text-align: right; background: var(--light-primary); padding: 15px; border-radius: 10px;">
                             <span style="font-size: 14px; color: var(--text-muted); font-weight: 500;">Total
-                                Amount:</span> ₹{{ cart_data.total_cost }}
+                                Amount:</span> Rs. {{ cart_data.total_cost }}
                         </div>
                         {% else %}
                         <div style="text-align: center; color: var(--text-muted); padding: 40px;">
@@ -484,7 +482,7 @@
                     <div class="summary-box">
                         <h3
                             style="margin-top: 0; margin-bottom: 20px; color: var(--primary-color); border-bottom: 2px solid var(--light-primary); padding-bottom: 15px;">
-                            📍 Delivery Details
+                            Delivery Details
                         </h3>
 
                         <form method="POST">
@@ -533,7 +531,7 @@
                         <div>
                             <span class="order-id">ORD-{{ order.id|stringformat:"04d" }}</span>
                             <span class="order-meta"><i class="far fa-calendar-alt"></i> {{ order.created_at|date:"d M
-                                Y, h:i A" }} • {{ order.items_ordered }}</span><br>
+                                Y, h:i A" }} - {{ order.items_ordered }}</span><br>
                             <span class="order-meta"><i class="fas fa-map-marker-alt"
                                     style="color: var(--primary-color);"></i> {{ farmer.village }}, {{ farmer.district
                                 }}</span>
@@ -546,7 +544,7 @@
                             {% else %}
                             <span class="order-status">Pending</span>
                             {% endif %}
-                            <h3 style="margin: 5px 0 0 0; color: var(--primary-color);">₹{{ order.total_cost }}</h3>
+                            <h3 style="margin: 5px 0 0 0; color: var(--primary-color);">Rs. {{ order.total_cost }}</h3>
                         </div>
                     </div>
 
@@ -641,3 +639,6 @@
 </body>
 
 </html>
+
+
+

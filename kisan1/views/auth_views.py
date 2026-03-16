@@ -1,6 +1,7 @@
 import re
 import logging
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.models import Group
 from django.shortcuts import get_object_or_404, redirect, render
@@ -20,7 +21,9 @@ from kisan1.views.shared import (
     can_send_otp,
     clear_login_attempts,
     create_otp_session_payload,
+    get_otp_remaining_seconds,
     is_debug_mode,
+    is_otp_expired,
     is_otp_valid,
     is_valid_mobile,
     is_valid_name,
@@ -34,6 +37,7 @@ PASSBOOK_RE = re.compile(r'^[Tt][0-9]{11}$')
 LEASE_PASSBOOK_RE = re.compile(r'^[A-Z][0-9]{11}$')
 TRACTOR_LICENSE_RE = re.compile(r'^[A-Z]{2}[0-9]{13}$')
 PFS_LICENSE_RE = re.compile(r'^[A-Z0-9\-]{8,20}$')
+OTP_ATTEMPT_LIMIT = getattr(settings, 'OTP_ATTEMPT_LIMIT', 5)
 
 
 def _assign_group_for_role(role):
@@ -160,7 +164,7 @@ def handle_registration(request, role, template_name):
                 exp = request.POST.get(f'exp_{service}')
                 wage = request.POST.get(f'wage_{service}')
                 if exp and wage:
-                    services_list.append(f"{service} ({exp} Yrs @ ₹{wage}/hr)")
+                    services_list.append(f"{service} ({exp} Yrs @ Rs. {wage}/hr)")
                 else:
                     services_list.append(service)
 
@@ -223,7 +227,7 @@ def handle_registration(request, role, template_name):
                 acres = request.POST.get(f'acres_{soil}')
                 cost = request.POST.get(f'cost_{soil}')
                 if acres and cost:
-                    soil_details_list.append(f"{soil.replace('_', ' ')} ({acres} Acres @ ₹{cost}/acre)")
+                    soil_details_list.append(f"{soil.replace('_', ' ')} ({acres} Acres @ Rs. {cost}/acre)")
                 else:
                     soil_details_list.append(soil.replace('_', ' '))
 
@@ -256,7 +260,7 @@ def handle_registration(request, role, template_name):
             for tool in selected_tools:
                 cost = request.POST.get(f'cost_{tool}')
                 if cost:
-                    tools_with_cost.append(f"{tool} (₹{cost}/hr)")
+                    tools_with_cost.append(f"{tool} (Rs. {cost}/hr)")
                 else:
                     tools_with_cost.append(tool)
 
@@ -344,15 +348,39 @@ def register_pesticide(request):
 
 
 def verify_otp(request):
+    otp_payload = request.session.get('reg_otp')
     attempts = int(request.session.get('reg_otp_attempts', 0))
-    if attempts >= 5:
+    attempts_left = max(0, OTP_ATTEMPT_LIMIT - attempts)
+    remaining_seconds = get_otp_remaining_seconds(otp_payload)
+
+    if is_otp_expired(otp_payload):
         request.session.pop('reg_otp', None)
         request.session.pop('reg_otp_attempts', None)
-        messages.error(request, 'Too many invalid OTP attempts. Please register again to generate a new OTP.')
+        messages.error(request, 'OTP has expired. Please register again to generate a new OTP.', extra_tags='otp')
+        return render(request, 'kisan1/otp_verification.html', {
+            'otp_attempts_left': OTP_ATTEMPT_LIMIT,
+            'otp_remaining_seconds': 0,
+            'otp_expired': True,
+        })
+
+    if attempts >= OTP_ATTEMPT_LIMIT:
+        request.session.pop('reg_otp', None)
+        request.session.pop('reg_otp_attempts', None)
+        messages.error(request, 'Too many invalid OTP attempts. Please register again to generate a new OTP.', extra_tags='otp')
         return redirect('register_choice')
 
     if request.method == 'POST':
-        if is_otp_valid(request.session.get('reg_otp'), request.POST.get('otp')):
+        if is_otp_expired(otp_payload):
+            request.session.pop('reg_otp', None)
+            request.session.pop('reg_otp_attempts', None)
+            messages.error(request, 'OTP has expired. Please register again to generate a new OTP.', extra_tags='otp')
+            return render(request, 'kisan1/otp_verification.html', {
+                'otp_attempts_left': OTP_ATTEMPT_LIMIT,
+                'otp_remaining_seconds': 0,
+                'otp_expired': True,
+            })
+
+        if is_otp_valid(otp_payload, request.POST.get('otp')):
             core = request.session.get('reg_core')
             prof = request.session.get('reg_profile')
 
@@ -408,14 +436,18 @@ def verify_otp(request):
 
         updated_attempts = attempts + 1
         request.session['reg_otp_attempts'] = updated_attempts
-        if updated_attempts >= 5:
+        attempts_left = max(0, OTP_ATTEMPT_LIMIT - updated_attempts)
+        if updated_attempts >= OTP_ATTEMPT_LIMIT:
             request.session.pop('reg_otp', None)
             request.session.pop('reg_otp_attempts', None)
-            messages.error(request, 'Too many invalid OTP attempts. Please register again to generate a new OTP.')
+            messages.error(request, 'Too many invalid OTP attempts. Please register again to generate a new OTP.', extra_tags='otp')
             return redirect('register_choice')
-        messages.error(request, "Invalid OTP")
+        messages.error(request, "Invalid OTP", extra_tags='otp')
 
-    return render(request, 'kisan1/otp_verification.html')
+    return render(request, 'kisan1/otp_verification.html', {
+        'otp_attempts_left': attempts_left,
+        'otp_remaining_seconds': remaining_seconds,
+    })
 
 
 def login_view(request):
@@ -424,20 +456,20 @@ def login_view(request):
         role = request.POST.get('role', '').strip()
 
         if not is_valid_mobile(mobile):
-            messages.error(request, 'Enter a valid 10-digit mobile number.')
+            messages.error(request, 'Enter a valid 10-digit mobile number.', extra_tags='login')
             return render(request, 'kisan1/login.html')
 
         user_exists = UserRegistration.objects.filter(mobile=mobile, role=role).exists()
         if not user_exists:
-            messages.error(request, "User not registered!")
+            messages.error(request, "User not registered!", extra_tags='login')
             return render(request, 'kisan1/login.html')
 
         if not can_attempt_login(mobile, context='login'):
-            messages.error(request, 'Too many failed login attempts. Please wait before trying again.')
+            messages.error(request, 'Too many failed login attempts. Please wait before trying again.', extra_tags='login')
             return render(request, 'kisan1/login.html')
 
         if not can_send_otp(mobile, context='login'):
-            messages.error(request, 'Too many OTP requests. Please wait a few minutes and try again.')
+            messages.error(request, 'Too many OTP requests. Please wait a few minutes and try again.', extra_tags='login')
             return render(request, 'kisan1/login.html')
 
         # 4-digit OTP
@@ -457,15 +489,39 @@ def login_view(request):
 
 
 def otp_view(request):
+    otp_payload = request.session.get('login_otp')
     attempts = int(request.session.get('login_otp_attempts', 0))
-    if attempts >= 5:
+    attempts_left = max(0, OTP_ATTEMPT_LIMIT - attempts)
+    remaining_seconds = get_otp_remaining_seconds(otp_payload)
+
+    if is_otp_expired(otp_payload):
         request.session.pop('login_otp', None)
         request.session.pop('login_otp_attempts', None)
-        messages.error(request, 'Too many invalid OTP attempts. Please login again to generate a new OTP.')
+        messages.error(request, 'OTP has expired. Please login again to generate a new OTP.', extra_tags='otp')
+        return render(request, 'kisan1/otp_verify.html', {
+            'otp_attempts_left': OTP_ATTEMPT_LIMIT,
+            'otp_remaining_seconds': 0,
+            'otp_expired': True,
+        })
+
+    if attempts >= OTP_ATTEMPT_LIMIT:
+        request.session.pop('login_otp', None)
+        request.session.pop('login_otp_attempts', None)
+        messages.error(request, 'Too many invalid OTP attempts. Please login again to generate a new OTP.', extra_tags='login')
         return redirect('login')
 
     if request.method == "POST":
-        if is_otp_valid(request.session.get('login_otp'), request.POST.get('otp')):
+        if is_otp_expired(otp_payload):
+            request.session.pop('login_otp', None)
+            request.session.pop('login_otp_attempts', None)
+            messages.error(request, 'OTP has expired. Please login again to generate a new OTP.', extra_tags='otp')
+            return render(request, 'kisan1/otp_verify.html', {
+                'otp_attempts_left': OTP_ATTEMPT_LIMIT,
+                'otp_remaining_seconds': 0,
+                'otp_expired': True,
+            })
+
+        if is_otp_valid(otp_payload, request.POST.get('otp')):
             mobile = request.session.get('mobile')
             role = request.session.get('role')
 
@@ -483,22 +539,24 @@ def otp_view(request):
             request.session.pop('login_otp_back_url', None)
             clear_login_attempts(mobile, context='login')
 
-            messages.success(request, f"Welcome back, {user.name}!")
-
             if role == 'farmer':
                 return redirect('main_home')
             return redirect('dashboard', role=role)
 
         updated_attempts = attempts + 1
         request.session['login_otp_attempts'] = updated_attempts
+        attempts_left = max(0, OTP_ATTEMPT_LIMIT - updated_attempts)
         mobile = request.session.get('mobile')
         if mobile:
             register_failed_login_attempt(mobile, context='login')
-        if updated_attempts >= 5:
+        if updated_attempts >= OTP_ATTEMPT_LIMIT:
             request.session.pop('login_otp', None)
             request.session.pop('login_otp_attempts', None)
-            messages.error(request, 'Too many invalid OTP attempts. Please login again to generate a new OTP.')
+            messages.error(request, 'Too many invalid OTP attempts. Please login again to generate a new OTP.', extra_tags='login')
             return redirect('login')
-        messages.error(request, "Invalid OTP")
+        messages.error(request, "Invalid OTP", extra_tags='otp')
 
-    return render(request, 'kisan1/otp_verify.html')
+    return render(request, 'kisan1/otp_verify.html', {
+        'otp_attempts_left': attempts_left,
+        'otp_remaining_seconds': remaining_seconds,
+    })

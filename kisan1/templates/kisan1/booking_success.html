@@ -1,4 +1,4 @@
-{% load static %}
+﻿{% load static %}
 {% load i18n %}
 <!DOCTYPE html>
 <html lang="en">
@@ -187,9 +187,7 @@
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">← Back</button>
-    {% include 'kisan1/partials/language_toggle.html' %}
-
+    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">Back</button>
     <div class="leaf" style="left: 10%; animation-delay: 0s;"></div>
     <div class="leaf" style="left: 30%; animation-delay: 2s;"></div>
     <div class="leaf" style="left: 70%; animation-delay: 5s;"></div>
@@ -197,7 +195,7 @@
 
     <div class="success-container">
         <div class="checkmark-wrapper">
-            <div class="checkmark">✓</div>
+            <div class="checkmark">OK</div>
         </div>
 
         <h2>{{ title }}</h2>
@@ -219,3 +217,5 @@
 </body>
 
 </html>
+
+

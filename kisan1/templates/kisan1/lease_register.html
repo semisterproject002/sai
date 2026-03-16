@@ -1,4 +1,4 @@
-{% load i18n %}
+﻿{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -210,8 +210,7 @@
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">← Back</button>
-    {% include 'kisan1/partials/language_toggle.html' %}
+    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">{% trans "Back" %}</button>
     <div class="reg-card">
         <h2>{% trans "Lease Land Registration" %}</h2>
         <p>{% trans "List your property and find the best farmers" %}</p>
@@ -223,44 +222,43 @@
             <div class="form-group">
                 <label>{% trans "Full name:" %}</label>
                 <input type="text" name="name" placeholder="{% trans 'e.g., Ramesh Kumar' %}" pattern="[A-Za-z\s]{3,50}"
-                    required>
+                    minlength="3" maxlength="50" autocomplete="name" required>
             </div>
 
             <div class="input-row">
                 <div class="form-group">
                     <label>{% trans "Age:" %}</label>
-                    <input type="number" name="age" min="18" max="100" placeholder="{% trans '18-60' %}" required>
+                    <input type="number" name="age" min="18" max="100" step="1" inputmode="numeric"
+                        placeholder="{% trans '18-100' %}" required>
                 </div>
                 <div class="form-group">
                     <label>{% trans "Mobile:" %}</label>
-                    <input type="tel" name="mobile" maxlength="10" placeholder="{% trans '10-digit number' %}"
-                        pattern="[6789][0-9]{9}" required>
+                    <input type="tel" name="mobile" minlength="10" maxlength="10" inputmode="numeric" autocomplete="tel"
+                        placeholder="{% trans '10-digit number' %}" pattern="[6789][0-9]{9}" required>
                 </div>
             </div>
 
             <div class="form-group">
                 <label>{% trans "Pincode (Try: 503224, 506002, 500038):" %}</label>
                 <input type="text" id="pincode" name="pincode" placeholder="{% trans 'Enter 6-digit Pincode' %}"
-                    maxlength="6" pattern="[0-9]{6}" oninput="fetchLocationDetails()" required>
+                    minlength="6" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" oninput="fetchLocationDetails()" required>
             </div>
 
             <div class="input-row">
                 <div class="form-group">
                     <label>{% trans "State:" %}</label>
-                    <input type="text" id="state" name="state" value="Telangana" readonly>
+                    <input type="text" id="state" name="state" value="Telangana" maxlength="100" readonly required>
                 </div>
                 <div class="form-group">
                     <label>{% trans "District:" %}</label>
-                    <input type="text" id="district" name="district" placeholder="{% trans 'Auto-filled' %}" readonly
-                        required>
+                    <input type="text" id="district" name="district" placeholder="{% trans 'Auto-filled' %}" maxlength="100" readonly required>
                 </div>
             </div>
 
             <div class="input-row">
                 <div class="form-group">
                     <label>{% trans "Mandal:" %}</label>
-                    <input type="text" id="mandal" name="mandal" placeholder="{% trans 'Auto-filled' %}" readonly
-                        required>
+                    <input type="text" id="mandal" name="mandal" placeholder="{% trans 'Auto-filled' %}" maxlength="100" readonly required>
                 </div>
                 <div class="form-group">
                     <label>{% trans "Village:" %}</label>
@@ -283,8 +281,8 @@
                 </div>
                 <div class="form-group">
                     <label>{% trans "Total Land (Acres):" %}</label>
-                    <input type="number" step="0.1" name="total_land" min="0.1" placeholder="{% trans 'e.g., 5.5' %}"
-                        required>
+                    <input type="number" step="0.1" name="total_land" min="0.1" max="10000" inputmode="decimal"
+                        placeholder="{% trans 'e.g., 5.5' %}" required>
                 </div>
             </div>
 
@@ -293,22 +291,24 @@
                 <div class="soil-container">
                     <div class="soil-row">
                         <label><input type="checkbox" name="soils" value="Red_Soil"> {% trans "Red Soil" %}</label>
-                        <input type="number" step="0.1" name="acres_Red_Soil" min="0"
+                        <input type="number" step="0.1" name="acres_Red_Soil" min="0.1" max="10000" inputmode="decimal"
                             placeholder="{% trans 'Acres?' %}">
-                        <input type="number" name="cost_Red_Soil" min="0" placeholder="{% trans ' per acre (₹)' %}">
+                        <input type="number" name="cost_Red_Soil" min="1" max="100000" step="1" inputmode="numeric"
+                            placeholder="{% trans ' per acre (Rs.)' %}">
                     </div>
                     <div class="soil-row">
                         <label><input type="checkbox" name="soils" value="Black_Soil"> {% trans "Black Soil" %}</label>
-                        <input type="number" step="0.1" name="acres_Black_Soil" min="0"
+                        <input type="number" step="0.1" name="acres_Black_Soil" min="0.1" max="10000" inputmode="decimal"
                             placeholder="{% trans 'Acres?' %}">
-                        <input type="number" name="cost_Black_Soil" min="0" placeholder="{% trans ' per acre (₹)' %}">
+                        <input type="number" name="cost_Black_Soil" min="1" max="100000" step="1" inputmode="numeric"
+                            placeholder="{% trans ' per acre (Rs.)' %}">
                     </div>
                     <div class="soil-row">
                         <label><input type="checkbox" name="soils" value="Alluvial_Soil"> {% trans "Alluvial" %}</label>
-                        <input type="number" step="0.1" name="acres_Alluvial_Soil" min="0"
+                        <input type="number" step="0.1" name="acres_Alluvial_Soil" min="0.1" max="10000" inputmode="decimal"
                             placeholder="{% trans 'Acres?' %}">
-                        <input type="number" name="cost_Alluvial_Soil" min="0"
-                            placeholder="{% trans ' per acre (₹)' %}">
+                        <input type="number" name="cost_Alluvial_Soil" min="1" max="100000" step="1" inputmode="numeric"
+                            placeholder="{% trans ' per acre (Rs.)' %}">
                     </div>
                 </div>
             </div>
@@ -316,18 +316,62 @@
             <div class="form-group">
                 <label>{% trans "Passbook No:" %}</label>
                 <input type="text" name="passbook" placeholder="{% trans 'e.g., T12345678901' %}"
-                    pattern="[A-Z][0-9]{11}" maxlength="12" style="text-transform: uppercase;"
+                    pattern="[A-Z][0-9]{11}" minlength="12" maxlength="12" inputmode="text" autocomplete="off"
+                    style="text-transform: uppercase;"
                     title="Passbook must start with 1 Capital Letter followed by exactly 11 numbers."
                     oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);" required>
                 <small style="color: #666; font-size: 11px; margin-top: 4px; display: block;">* {% trans "Strictly 12
                     characters: 1 Capital alphabet & remaining 11 Numbers" %}</small>
             </div>
 
-            <button type="submit" class="btn-next">{% trans "Register ➔" %}</button>
+            <button type="submit" class="btn-next">{% trans "Register" %}</button>
         </form>
     </div>
 
     <script src="{% static 'js/location.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.querySelector('form');
+            if (!form) {
+                return;
+            }
+
+            form.addEventListener('submit', function (event) {
+                const totalLandField = document.querySelector('input[name="total_land"]');
+                const totalLand = totalLandField ? parseFloat(totalLandField.value) : NaN;
+                const selectedSoils = Array.from(document.querySelectorAll('input[name="soils"]:checked'));
+
+                if (selectedSoils.length === 0) {
+                    event.preventDefault();
+                    alert('{% trans "Please select at least one soil type." %}');
+                    return;
+                }
+
+                let usedAcres = 0;
+                for (const soil of selectedSoils) {
+                    const soilLabel = soil.value.replace(/_/g, ' ');
+                    const acresField = document.querySelector(`input[name="acres_${soil.value}"]`);
+                    const costField = document.querySelector(`input[name="cost_${soil.value}"]`);
+                    const acresValue = acresField ? parseFloat(acresField.value) : NaN;
+                    const costValue = costField ? parseFloat(costField.value) : NaN;
+
+                    if (!acresField || !costField || !acresField.value.trim() || acresValue <= 0 || !costField.value.trim() || costValue <= 0) {
+                        event.preventDefault();
+                        alert('{% trans "Please enter acres and rate per acre for:" %} ' + soilLabel);
+                        return;
+                    }
+
+                    usedAcres += acresValue;
+                }
+
+                if (!isNaN(totalLand) && usedAcres > totalLand) {
+                    event.preventDefault();
+                    alert('{% trans "Total soil acres cannot exceed total land." %}');
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>
+

@@ -1,4 +1,4 @@
-{% load i18n %}
+﻿{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -208,25 +208,24 @@
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">← Back</button>
-    {% include 'kisan1/partials/language_toggle.html' %}
-
     <div class="bubble" style="width: 80px; height: 80px; left: 10%; animation-delay: 0s;"></div>
     <div class="bubble" style="width: 120px; height: 120px; left: 80%; animation-delay: 4s;"></div>
     <div class="bubble" style="width: 60px; height: 60px; left: 40%; animation-delay: 8s;"></div>
 
     <div class="login-card">
         <div class="logo-area">
-            <span style="color: #fbc02d;">🌾</span> {% trans "Kisan Asara" %}
+            {% trans "Kisan Asara" %}
         </div>
         <h2>{% trans "Welcome Back" %}</h2>
 
         {% if messages %}
         <div id="msg-wrapper" class="msg-container">
             {% for message in messages %}
-            <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}">
+            {% if 'login' in message.tags %}
+            <div class="alert {% if 'success' in message.tags %}alert-success{% else %}alert-error{% endif %}">
                 {{ message }}
             </div>
+            {% endif %}
             {% endfor %}
         </div>
         <script>
@@ -266,7 +265,7 @@
                     required oninput="this.value=this.value.replace(/[^0-9]/g,'')">
             </div>
 
-            <button type="submit" class="btn-login">{% trans "Send OTP ➔" %}</button>
+            <button type="submit" class="btn-login">{% trans "Send OTP" %}</button>
         </form>
 
         <div class="footer-links">
@@ -276,3 +275,4 @@
 </body>
 
 </html>
+

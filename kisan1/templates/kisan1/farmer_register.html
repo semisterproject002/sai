@@ -1,4 +1,4 @@
-{% load i18n %}
+﻿{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -189,9 +189,7 @@
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">← Back</button>
-    {% include 'kisan1/partials/language_toggle.html' %}
-
+    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">{% trans "Back" %}</button>
     <div class="reg-card">
         <h2>{% trans "Farmer Registration" %}</h2>
         <p>{% trans "Join Kisan Asara and grow your farming future" %}</p>
@@ -203,19 +201,20 @@
             <div class="form-group">
                 <label>{% trans "Full name:" %}</label>
                 <input type="text" name="name" placeholder="{% trans 'e.g., Ramesh Kumar' %}" pattern="[A-Za-z\s]{3,50}"
-                    title="{% trans 'Only letters and spaces allowed' %}" required>
+                    minlength="3" maxlength="50" autocomplete="name" title="{% trans 'Only letters and spaces allowed' %}" required>
             </div>
 
             <div class="input-row">
                 <div class="form-group">
                     <label>{% trans "Phone:" %}</label>
-                    <input type="tel" name="mobile" maxlength="10" placeholder="{% trans 'e.g., 9876543210' %}"
-                        pattern="[6789][0-9]{9}" title="{% trans 'Enter a valid 10-digit Indian mobile number' %}"
-                        required>
+                    <input type="tel" name="mobile" minlength="10" maxlength="10" inputmode="numeric" autocomplete="tel"
+                        placeholder="{% trans 'e.g., 9876543210' %}" pattern="[6789][0-9]{9}"
+                        title="{% trans 'Enter a valid 10-digit Indian mobile number' %}" required>
                 </div>
                 <div class="form-group">
                     <label>{% trans "Age:" %}</label>
-                    <input type="number" name="age" min="18" max="100" placeholder="{% trans 'e.g., 45' %}" required>
+                    <input type="number" name="age" min="18" max="100" step="1" inputmode="numeric"
+                        placeholder="{% trans 'e.g., 45' %}" required>
                 </div>
             </div>
 
@@ -232,7 +231,8 @@
             <div class="form-group">
                 <label>{% trans "Pattadar Passbook No:" %}</label>
                 <input type="text" name="passbook" placeholder="{% trans 'e.g., T12345678901' %}"
-                    pattern="[Tt][0-9]{11}" maxlength="12" style="text-transform: uppercase;"
+                    pattern="[Tt][0-9]{11}" minlength="12" maxlength="12" inputmode="text" autocomplete="off"
+                    style="text-transform: uppercase;"
                     title="{% trans '* Must start with \'T\' followed by exactly 11 numbers' %}"
                     oninput="this.value = this.value.toUpperCase().replace(/[^T0-9]/g, '').slice(0, 12);" required>
             </div>
@@ -240,26 +240,24 @@
             <div class="form-group">
                 <label>{% trans "Pincode (Try: 503224, 506002, 500038):" %}</label>
                 <input type="text" id="pincode" name="pincode" placeholder="{% trans 'Enter 6-digit Pincode' %}"
-                    maxlength="6" pattern="[0-9]{6}" oninput="fetchLocationDetails()" required>
+                    minlength="6" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" oninput="fetchLocationDetails()" required>
             </div>
 
             <div class="input-row">
                 <div class="form-group">
                     <label>{% trans "State:" %}</label>
-                    <input type="text" id="state" name="state" value="Telangana" readonly>
+                    <input type="text" id="state" name="state" value="Telangana" maxlength="100" readonly required>
                 </div>
                 <div class="form-group">
                     <label>{% trans "District:" %}</label>
-                    <input type="text" id="district" name="district" placeholder="{% trans 'Auto-filled' %}" readonly
-                        required>
+                    <input type="text" id="district" name="district" placeholder="{% trans 'Auto-filled' %}" maxlength="100" readonly required>
                 </div>
             </div>
 
             <div class="input-row">
                 <div class="form-group">
                     <label>{% trans "Mandal:" %}</label>
-                    <input type="text" id="mandal" name="mandal" placeholder="{% trans 'Auto-filled' %}" readonly
-                        required>
+                    <input type="text" id="mandal" name="mandal" placeholder="{% trans 'Auto-filled' %}" maxlength="100" readonly required>
                 </div>
                 <div class="form-group">
                     <label>{% trans "Village:" %}</label>
@@ -278,3 +276,4 @@
 </body>
 
 </html>
+

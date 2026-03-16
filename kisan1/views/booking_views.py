@@ -398,7 +398,7 @@ def book_tool(request, tool_id):
         tool_prices = {}
         if tool_shop.tools_type:
             for item in tool_shop.tools_type.split('|'):
-                match = re.search(r'([A-Za-z]+)\s*\(₹(\d+)/hr\)', item)
+                match = re.search(r'([A-Za-z]+)\s*\(Rs\.?\s*(\d+)/hr\)', item)
                 if match:
                     tool_prices[match.group(1)] = int(match.group(2))
 
@@ -414,7 +414,7 @@ def book_tool(request, tool_id):
                 if hours > 0:
                     price_per_hour = tool_prices.get(tool, 0)
                     total_cost += hours * price_per_hour
-                    tools_list.append(f"{tool} ({hours} hrs @ ₹{price_per_hour}/hr)")
+                    tools_list.append(f"{tool} ({hours} hrs @ Rs. {price_per_hour}/hr)")
 
         if not tools_list:
             messages.error(request, "Please select at least one tool and enter the required hours.")
@@ -530,7 +530,7 @@ def book_shop(request, shop_id):
                     messages.error(request, f"Sorry, only {item.stock_quantity} units of {item.item_name} available.")
                     return redirect('book_shop', shop_id=shop_id)
                 calculated_total_cost += quantity * item.price
-                items_ordered.append(f"{item.item_name} ({quantity} units @ ₹{item.price})")
+                items_ordered.append(f"{item.item_name} ({quantity} units @ Rs. {item.price})")
 
         if not items_ordered:
             messages.error(request, "Please select at least one item.")
@@ -646,7 +646,7 @@ def accept_shop_order(request, booking_id):
         try:
             with transaction.atomic():
                 for item_str in booking.items_ordered.split(', '):
-                    # Parse format safely: "Urea (2 units @ ₹100)" -> "Urea" and "2"
+                    # Parse format safely: "Urea (2 units @ Rs. 100)" -> "Urea" and "2"
                     product_name = item_str.split(' (')[0].strip()
                     qty_str = item_str.split('(')[1].split(' units')[0]
                     qty = int(qty_str)

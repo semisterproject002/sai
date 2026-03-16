@@ -1,4 +1,4 @@
-{% extends 'kisan1/base.html' %}
+﻿{% extends 'kisan1/base.html' %}
 {% load i18n %}
 {% load static %}
 
@@ -205,7 +205,7 @@
 <div class="premium-dashboard-bg"></div>
 
 <a href="{% url 'farmer_booking' %}" class="my-requests-btn">
-    📋 {% trans "Track My Bookings" %}
+    {% trans "Track My Bookings" %}
 </a>
 
 <div class="portal-container">
@@ -213,7 +213,7 @@
     <div class="dash-nav"
         style="background: var(--primary-color); color: white; border-radius: 16px; padding: 18px 24px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-md);">
         <button onclick="history.back()" class="back-btn"
-            style="background: rgba(255, 255, 255, 0.2); border: none; color: white; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600;">⬅
+            style="background: rgba(255, 255, 255, 0.2); border: none; color: white; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600;">
             Back</button>
 
         <h3 style="margin: 0; text-transform: uppercase; font-weight: 800;">
@@ -225,12 +225,11 @@
 
         <div class="menu-container">
             <button class="menu-btn"
-                style="background: white; color: var(--primary-color); border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer;">☰
-                Menu</button>
+                style="background: white; color: var(--primary-color); border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer;">Menu</button>
             <div class="dropdown-content">
-                <a href="{% url 'register_choice' %}">🏠 Home (Select Role)</a>
-                <a href="{% url 'farmer_booking' %}">📋 My Bookings</a>
-                <a href="{% url 'logout' %}">🚪 Logout</a>
+                <a href="{% url 'register_choice' %}">Home (Select Role)</a>
+                <a href="{% url 'farmer_booking' %}">My Bookings</a>
+                <a href="{% url 'logout' %}">Logout</a>
             </div>
         </div>
     </div>
@@ -245,16 +244,16 @@
         <select id="dashboardFilter" onchange="filterDashboard()"
             style="padding: 10px 15px; border-radius: 8px; border: none; background: white; font-weight: 700;">
             <option value="all">All Services</option>
-            <option value="labor-sec">👷 Laborers</option>
-            <option value="tractor-sec">🚜 Tractor Services</option>
-            <option value="tool-sec">🛠️ Farm Tools</option>
-            <option value="lease-sec">🌾 Land Lease</option>
-            <option value="shop-sec">🏪 Pesticide Shops</option>
+            <option value="labor-sec">Laborers</option>
+            <option value="tractor-sec">Tractor Services</option>
+            <option value="tool-sec">Farm Tools</option>
+            <option value="lease-sec">Land Lease</option>
+            <option value="shop-sec">Pesticide Shops</option>
         </select>
     </div>
 
     <div id="labor-sec" class="service-section">
-        <h3 class="section-title">👷 {% trans "Available Laborers" %}</h3>
+        <h3 class="section-title">{% trans "Available Laborers" %}</h3>
         <div class="grid">
             {% for labor in labors %}
             <div class="item-card" style="border-top: 6px solid var(--labor-green);">
@@ -262,7 +261,7 @@
                     <h4 style="color: #111;">{{ labor.user.name }}</h4>
                     <p><strong>{% trans "Skills" %}:</strong> {{ labor.skills }}</p>
                     <p class="price-tag" style="color: var(--labor-green);">
-                        ₹{{ labor.wage_amount }} / {{ labor.wage_type }}</p>
+                        Rs. {{ labor.wage_amount }} / {{ labor.wage_type }}</p>
 
                 </div>
                 <a href="{% url 'book_labor' labor.id %}" class="btn btn-labor">{% trans "Book Labor" %}</a>
@@ -274,15 +273,15 @@
     </div>
 
     <div id="tractor-sec" class="service-section">
-        <h3 class="section-title">🚜 {% trans "Tractor Services" %}</h3>
+        <h3 class="section-title"> {% trans "Tractor Services" %}</h3>
         <div class="grid">
             {% for tractor in tractors %}
             <div class="item-card" style="border-top: 6px solid var(--tractor-orange);">
                 <div>
                     <h4 style="color: #111;">{{ tractor.user.name }}</h4>
-                    <p>📍 <strong>{% trans "Village" %}:</strong> {{ tractor.user.village }}</p>
+                    <p><strong>{% trans "Village" %}:</strong> {{ tractor.user.village }}</p>
                     <p class="price-tag" style="color: var(--tractor-orange);">
-                        ₹{{ tractor.wage_amount }} / {% trans "Hour"%}</p>
+                        Rs. {{ tractor.wage_amount }} / {% trans "Hour"%}</p>
 
                 </div>
                 <a href="{% url 'book_tractor' tractor.id %}" class="btn btn-tractor">{% trans "Book Tractor" %}</a>
@@ -294,13 +293,13 @@
     </div>
 
     <div id="tool-sec" class="service-section">
-        <h3 class="section-title">🛠️ {% trans "Farm Tools for Rent" %}</h3>
+        <h3 class="section-title">{% trans "Farm Tools for Rent" %}</h3>
         <div class="grid">
             {% for tool in tools %}
             <div class="item-card" style="border-top: 6px solid var(--tool-blue);">
                 <div>
                     <h4 style="color: #111;">{{ tool.shop_name }}</h4>
-                    <p>🧰 <strong>{% trans "Available" %}:</strong> {{ tool.tools_type }}</p>
+                    <p><strong>{% trans "Available" %}:</strong> {{ tool.tools_type }}</p>
                 </div>
                 <a href="{% url 'book_tool' tool.id %}" class="btn btn-tool">{% trans "Rent Tools Now" %}</a>
             </div>
@@ -309,15 +308,15 @@
     </div>
 
     <div id="lease-sec" class="service-section">
-        <h3 class="section-title">🌾 {% trans "Land for Lease" %}</h3>
+        <h3 class="section-title">{% trans "Land for Lease" %}</h3>
         <div class="grid">
             {% for land in lands %}
             <div class="item-card" style="border-top: 6px solid var(--lease-purple);">
                 <div>
-                    <h4 style="color: #111;">📍 {{ land.user.village }}</h4>
-                    <p>📏 <strong>{% trans "Area" %}:</strong> {{ land.land_area }} {% trans "Acres" %}</p>
+                    <h4 style="color: #111;">{{ land.user.village }}</h4>
+                    <p><strong>{% trans "Area" %}:</strong> {{ land.land_area }} {% trans "Acres" %}</p>
                     <p class="price-tag" style="color: var(--lease-purple);">
-                        ₹{{ land.lease_per_day }} / {% trans "Day" %}</p>
+                        Rs. {{ land.lease_per_day }} / {% trans "Day" %}</p>
 
                 </div>
                 <a href="{% url 'request_lease' land.id %}" class="btn btn-lease">{% trans "Request Lease" %}</a>
@@ -327,14 +326,14 @@
     </div>
 
     <div id="shop-sec" class="service-section">
-        <h3 class="section-title">🏪 {% trans "Fertilizer & Pesticide Shops" %}</h3>
+        <h3 class="section-title">{% trans "Fertilizer & Pesticide Shops" %}</h3>
         <div class="grid">
             {% for shop in pesticides %}
             <div class="item-card" style="border-top: 6px solid var(--pesticide-teal);">
                 <div>
                     <h4 style="color: #111;">{{ shop.shop_name }}</h4>
-                    <p>📍 <strong>{% trans "Village" %}:</strong> {{ shop.user.village }}</p>
-                    <p>📦 <strong>{% trans "Products" %}:</strong> {{ shop.products_sold }}</p>
+                    <p><strong>{% trans "Village" %}:</strong> {{ shop.user.village }}</p>
+                    <p><strong>{% trans "Products" %}:</strong> {{ shop.products_sold }}</p>
                 </div>
                 <a href="{% url 'book_shop' shop.id %}" class="btn btn-pesticide">{% trans "Buy Products" %}</a>
             </div>

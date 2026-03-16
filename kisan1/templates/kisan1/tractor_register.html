@@ -1,4 +1,4 @@
-{% load static %}
+﻿{% load static %}
 {% load i18n %}
 <!DOCTYPE html>
 <html lang="en">
@@ -220,8 +220,7 @@
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">← Back</button>
-    {% include 'kisan1/partials/language_toggle.html' %}
+    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">{% trans "Back" %}</button>
     <div class="reg-card">
         <h2>Tractor Driver Register</h2>
         <p>Join our network & get profits / work opportunities</p>
@@ -233,56 +232,56 @@
             <div class="form-group">
                 <label>Full name:</label>
                 <input type="text" name="name" placeholder="{% trans 'e.g., Ramesh Kumar' %}" pattern="[A-Za-z\s]{3,50}"
-                    required>
+                    minlength="3" maxlength="50" autocomplete="name" required>
             </div>
 
             <div class="input-row">
                 <div class="form-group">
                     <label>Age:</label>
-                    <input type="number" name="age" min="18" max="60" placeholder="{% trans '18-60' %}" required>
+                    <input type="number" name="age" min="18" max="100" step="1" inputmode="numeric"
+                        placeholder="{% trans '18-100' %}" required>
                 </div>
                 <div class="form-group">
                     <label>Total Experience (Yrs):</label>
-                    <input type="number" name="total_experience" min="0" max="40" placeholder="{% trans 'e.g., 5' %}"
-                        required>
+                    <input type="number" name="experience" min="0" max="60" step="1" inputmode="numeric"
+                        placeholder="{% trans 'e.g., 5' %}" required>
                 </div>
             </div>
 
             <div class="input-row">
                 <div class="form-group">
                     <label>Mobile No:</label>
-                    <input type="tel" name="mobile" maxlength="10" placeholder="{% trans '10-digit number' %}"
-                        pattern="[6789][0-9]{9}" required>
+                    <input type="tel" name="mobile" minlength="10" maxlength="10" inputmode="numeric" autocomplete="tel"
+                        placeholder="{% trans '10-digit number' %}" pattern="[6789][0-9]{9}" required>
                 </div>
                 <div class="form-group">
-                    <label>Base wage per hour (₹):</label>
-                    <input type="number" name="base_wage" min="1" placeholder="{% trans 'e.g., 500' %}" required>
+                    <label>Base wage per hour (Rs.):</label>
+                    <input type="number" name="base_wage" min="1" max="100000" step="1" inputmode="numeric"
+                        placeholder="{% trans 'e.g., 500' %}" required>
                 </div>
             </div>
 
             <div class="form-group">
                 <label>Pincode (Try: 503224, 506002, 500038):</label>
                 <input type="text" id="pincode" name="pincode" placeholder="{% trans 'Enter 6-digit Pincode' %}"
-                    maxlength="6" pattern="[0-9]{6}" oninput="fetchLocationDetails()" required>
+                    minlength="6" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" oninput="fetchLocationDetails()" required>
             </div>
 
             <div class="input-row">
                 <div class="form-group">
                     <label>State:</label>
-                    <input type="text" id="state" name="state" value="Telangana" readonly>
+                    <input type="text" id="state" name="state" value="Telangana" maxlength="100" readonly required>
                 </div>
                 <div class="form-group">
                     <label>District:</label>
-                    <input type="text" id="district" name="district" placeholder="{% trans 'Auto-filled' %}" readonly
-                        required>
+                    <input type="text" id="district" name="district" placeholder="{% trans 'Auto-filled' %}" maxlength="100" readonly required>
                 </div>
             </div>
 
             <div class="input-row">
                 <div class="form-group">
                     <label>Mandal:</label>
-                    <input type="text" id="mandal" name="mandal" placeholder="{% trans 'Auto-filled' %}" readonly
-                        required>
+                    <input type="text" id="mandal" name="mandal" placeholder="{% trans 'Auto-filled' %}" maxlength="100" readonly required>
                 </div>
                 <div class="form-group">
                     <label>Village:</label>
@@ -294,8 +293,8 @@
 
             <div class="form-group">
                 <label>Driving License ID:</label>
-                <input type="text" name="license_id" placeholder="{% trans 'e.g., TS0520230000123' %}"
-                    pattern="^[A-Z]{2}[0-9]{13}$"
+                <input type="text" id="driving_license" name="driving_license" placeholder="{% trans 'e.g., TS0520230000123' %}"
+                    pattern="^[A-Z]{2}[0-9]{13}$" minlength="15" maxlength="15" autocomplete="off"
                     title="Must be a valid Indian Driving License (2 capital letters followed by 13 numbers)"
                     oninput="this.value = this.value.toUpperCase()" required>
             </div>
@@ -309,8 +308,8 @@
                             <label for="srv1">Ploughing</label>
                         </div>
                         <div class="service-inputs">
-                            <input type="number" name="exp_Ploughing" min="0" placeholder="{% trans 'Exp (Yrs)' %}">
-                            <input type="number" name="wage_Ploughing" min="0" placeholder="{% trans '₹ per hour' %}">
+                            <input type="number" name="exp_Ploughing" min="0" max="60" step="1" inputmode="numeric" placeholder="{% trans 'Exp (Yrs)' %}">
+                            <input type="number" name="wage_Ploughing" min="1" max="100000" step="1" inputmode="numeric" placeholder="{% trans 'Rs. per hour' %}">
                         </div>
                     </div>
 
@@ -320,8 +319,8 @@
                             <label for="srv2">Harrowing</label>
                         </div>
                         <div class="service-inputs">
-                            <input type="number" name="exp_Harrowing" min="0" placeholder="{% trans 'Exp (Yrs)' %}">
-                            <input type="number" name="wage_Harrowing" min="0" placeholder="{% trans '₹ per hour' %}">
+                            <input type="number" name="exp_Harrowing" min="0" max="60" step="1" inputmode="numeric" placeholder="{% trans 'Exp (Yrs)' %}">
+                            <input type="number" name="wage_Harrowing" min="1" max="100000" step="1" inputmode="numeric" placeholder="{% trans 'Rs. per hour' %}">
                         </div>
                     </div>
 
@@ -331,14 +330,14 @@
                             <label for="srv3">Transport</label>
                         </div>
                         <div class="service-inputs">
-                            <input type="number" name="exp_Transport" min="0" placeholder="{% trans 'Exp (Yrs)' %}">
-                            <input type="number" name="wage_Transport" min="0" placeholder="{% trans '₹ per hour' %}">
+                            <input type="number" name="exp_Transport" min="0" max="60" step="1" inputmode="numeric" placeholder="{% trans 'Exp (Yrs)' %}">
+                            <input type="number" name="wage_Transport" min="1" max="100000" step="1" inputmode="numeric" placeholder="{% trans 'Rs. per hour' %}">
                         </div>
                     </div>
                 </div>
             </div>
 
-            <button type="submit" class="btn-next">Register ➔</button>
+            <button type="submit" class="btn-next">{% trans "Register" %}</button>
         </form>
     </div>
     <script src="{% static 'js/location.js' %}"></script>
@@ -349,8 +348,8 @@
 
             form.addEventListener('submit', function (event) {
                 // 1. Double-check License Validation
-                const licenseInput = document.getElementById('license_id').value.trim();
-                const licenseRegex = /^TS\d{13}$/;
+                const licenseInput = document.getElementById('driving_license').value.trim();
+                const licenseRegex = /^[A-Z]{2}\d{13}$/;
 
                 if (!licenseRegex.test(licenseInput)) {
                     alert("Invalid License ID. It must start with 'TS' followed by exactly 13 numbers.");
@@ -405,3 +404,5 @@
 </body>
 
 </html>
+
+

@@ -1,4 +1,4 @@
-{% load i18n %}
+﻿{% load i18n %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,14 +26,12 @@
     </style>
 </head>
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">← Back</button>
-    {% include 'kisan1/partials/language_toggle.html' %}
-
+    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">Back</button>
     <div class="booking-card">
         <div class="provider-info">
             <h3>{{ land.user.name }}</h3>
-            <p>📍 {% trans "Location:" %} <span>{{ land.user.village }}</span></p>
-            <p>🪪 {% trans "Passbook No:" %} <span>{{ land.passbook_number }}</span></p>
+            <p>{% trans "Location:" %} <span>{{ land.user.village }}</span></p>
+            <p>{% trans "Passbook No:" %} <span>{{ land.passbook_number }}</span></p>
         </div>
 
         <form method="POST" id="leaseForm">
@@ -49,7 +47,7 @@
                         </div>
                         <div class="soil-inputs">
                             <input type="number" name="acres_Red" placeholder="Acres">
-                            <input type="number" name="rate_Red" placeholder="₹ Rate">
+                            <input type="number" name="rate_Red" placeholder="Rate (Rs.)">
                         </div>
                     </div>
 
@@ -60,7 +58,7 @@
                         </div>
                         <div class="soil-inputs">
                             <input type="number" name="acres_Black" placeholder="Acres">
-                            <input type="number" name="rate_Black" placeholder="₹ Rate">
+                            <input type="number" name="rate_Black" placeholder="Rate (Rs.)">
                         </div>
                     </div>
 
@@ -71,7 +69,7 @@
                         </div>
                         <div class="soil-inputs">
                             <input type="number" name="acres_Alluvial" placeholder="Acres">
-                            <input type="number" name="rate_Alluvial" placeholder="₹ Rate">
+                            <input type="number" name="rate_Alluvial" placeholder="Rate (Rs.)">
                         </div>
                     </div>
                 </div>
@@ -87,8 +85,8 @@
                 <textarea name="message_to_owner" id="message_to_owner" rows="3"></textarea>
             </div>
 
-            <button type="submit" class="btn-hire">Register ➔</button>
-            <a href="javascript:history.back()" class="back-link">⬅ {% trans "Cancel" %}</a>
+            <button type="submit" class="btn-hire">Register</button>
+            <a href="javascript:history.back()" class="back-link">{% trans "Cancel" %}</a>
         </form>
     </div>
 
@@ -137,3 +135,5 @@
     </script>
 </body>
 </html>
+
+

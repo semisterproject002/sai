@@ -1,4 +1,4 @@
-{% load i18n %}
+﻿{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -215,8 +215,7 @@
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">← Back</button>
-    {% include 'kisan1/partials/language_toggle.html' %}
+    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">{% trans "Back" %}</button>
     <div class="reg-card">
         <h2>{% trans "Labor Registration" %}</h2>
         <p>{% trans "Complete your profile & get employability / work opportunities" %}</p>
@@ -228,18 +227,19 @@
             <div class="form-group">
                 <label>{% trans "Full name:" %}</label>
                 <input type="text" name="name" placeholder="{% trans 'e.g., Ramesh Kumar' %}" pattern="[A-Za-z\s]{3,50}"
-                    required>
+                    minlength="3" maxlength="50" autocomplete="name" required>
             </div>
 
             <div class="input-row">
                 <div class="form-group">
                     <label>{% trans "Age:" %}</label>
-                    <input type="number" name="age" min="18" max="100" placeholder="{% trans 'e.g., 25' %}" required>
+                    <input type="number" name="age" min="18" max="100" step="1" inputmode="numeric"
+                        placeholder="{% trans 'e.g., 25' %}" required>
                 </div>
                 <div class="form-group">
                     <label>{% trans "Mobile No:" %}</label>
-                    <input type="tel" name="mobile" maxlength="10" placeholder="{% trans 'e.g., 9876543210' %}"
-                        pattern="[6789][0-9]{9}" required>
+                    <input type="tel" name="mobile" minlength="10" maxlength="10" inputmode="numeric" autocomplete="tel"
+                        placeholder="{% trans 'e.g., 9876543210' %}" pattern="[6789][0-9]{9}" required>
                 </div>
             </div>
 
@@ -255,8 +255,9 @@
 
             <div class="input-row">
                 <div class="form-group">
-                    <label>{% trans "Wage Amount (₹):" %}</label>
-                    <input type="number" name="wage_amount" min="1" placeholder="{% trans 'e.g., 500' %}" required>
+                    <label>{% trans "Wage Amount (Rs.):" %}</label>
+                    <input type="number" name="wage_amount" min="1" max="100000" step="1" inputmode="numeric"
+                        placeholder="{% trans 'e.g., 500' %}" required>
                 </div>
                 <div class="form-group">
                     <label>{% trans "Per Day / Hour:" %}</label>
@@ -270,26 +271,24 @@
             <div class="form-group">
                 <label>{% trans "Pincode (Try: 503224, 506002, 500038):" %}</label>
                 <input type="text" id="pincode" name="pincode" placeholder="{% trans 'Enter 6-digit Pincode' %}"
-                    maxlength="6" pattern="[0-9]{6}" oninput="fetchLocationDetails()" required>
+                    minlength="6" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" oninput="fetchLocationDetails()" required>
             </div>
 
             <div class="input-row">
                 <div class="form-group">
                     <label>{% trans "State:" %}</label>
-                    <input type="text" id="state" name="state" value="Telangana" readonly>
+                    <input type="text" id="state" name="state" value="Telangana" maxlength="100" readonly required>
                 </div>
                 <div class="form-group">
                     <label>{% trans "District:" %}</label>
-                    <input type="text" id="district" name="district" placeholder="{% trans 'Auto-filled' %}" readonly
-                        required>
+                    <input type="text" id="district" name="district" placeholder="{% trans 'Auto-filled' %}" maxlength="100" readonly required>
                 </div>
             </div>
 
             <div class="input-row">
                 <div class="form-group">
                     <label>{% trans "Mandal:" %}</label>
-                    <input type="text" id="mandal" name="mandal" placeholder="{% trans 'Auto-filled' %}" readonly
-                        required>
+                    <input type="text" id="mandal" name="mandal" placeholder="{% trans 'Auto-filled' %}" maxlength="100" readonly required>
                 </div>
                 <div class="form-group">
                     <label>{% trans "Village:" %}</label>
@@ -304,15 +303,15 @@
                 <div class="skills-container">
                     <div class="skill-row">
                         <label><input type="checkbox" name="skills" value="Harvesting"> {% trans "Harvesting" %}</label>
-                        <input type="number" name="exp_Harvesting" min="0" placeholder="{% trans 'Years of exp' %}">
+                        <input type="number" name="exp_Harvesting" min="0" max="60" step="1" inputmode="numeric" placeholder="{% trans 'Years of exp' %}">
                     </div>
                     <div class="skill-row">
                         <label><input type="checkbox" name="skills" value="Ploughing"> {% trans "Ploughing" %}</label>
-                        <input type="number" name="exp_Ploughing" min="0" placeholder="{% trans 'Years of exp' %}">
+                        <input type="number" name="exp_Ploughing" min="0" max="60" step="1" inputmode="numeric" placeholder="{% trans 'Years of exp' %}">
                     </div>
                     <div class="skill-row">
                         <label><input type="checkbox" name="skills" value="Sowing"> {% trans "Sowing" %}</label>
-                        <input type="number" name="exp_Sowing" min="0" placeholder="{% trans 'Years of exp' %}">
+                        <input type="number" name="exp_Sowing" min="0" max="60" step="1" inputmode="numeric" placeholder="{% trans 'Years of exp' %}">
                     </div>
                 </div>
             </div>
@@ -327,23 +326,32 @@
             </div>
             {% endif %}
 
-            <button type="submit" class="btn-next">{% trans "Submit ➔ Register" %}</button>
+            <button type="submit" class="btn-next">{% trans "Submit Register" %}</button>
         </form>
     </div>
     <script src="{% static 'js/location.js' %}"></script>
     
     <script>
         document.getElementById('laborForm').addEventListener('submit', function(event) {
-            // Find all checked skill checkboxes
             const checkedSkills = document.querySelectorAll('input[name="skills"]:checked');
-            
-            // If none are checked, stop the form and alert the user
+
             if (checkedSkills.length === 0) {
-                event.preventDefault(); // This stops the page from reloading
+                event.preventDefault();
                 alert('{% trans "Please select at least one skill to continue." %}');
+                return;
+            }
+
+            for (const skill of checkedSkills) {
+                const expField = document.querySelector(`input[name="exp_${skill.value}"]`);
+                if (!expField || expField.value.trim() === "") {
+                    event.preventDefault();
+                    alert('{% trans "Please enter years of experience for:" %} ' + skill.value);
+                    return;
+                }
             }
         });
     </script>
 </body>
 
 </html>
+

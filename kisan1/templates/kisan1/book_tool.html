@@ -1,4 +1,4 @@
-{% load i18n %}
+﻿{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -253,8 +253,7 @@
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">← Back</button>
-    {% include 'kisan1/partials/language_toggle.html' %}
+    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">Back</button>
     <div class="booking-card">
         <div class="provider-info">
             <h3>{{ tool_shop.shop_name }}</h3>
@@ -335,11 +334,11 @@
 
             <div class="total-box">
                 <span style="text-transform: uppercase; font-size: 11px; letter-spacing: 1px; color: #aaa;">{% trans "Estimated Total" %}</span>
-                <span class="total-amount">₹<span id="displayTotal">0.00</span></span>
+                <span class="total-amount">Rs. <span id="displayTotal">0.00</span></span>
             </div>
 
-            <button type="submit" class="btn-hire">✔️ {% trans "Book Tools Now" %}</button>
-            <a href="javascript:history.back()" class="back-link">⬅ {% trans "Cancel" %}</a>
+            <button type="submit" class="btn-hire">{% trans "Book Tools Now" %}</button>
+            <a href="javascript:history.back()" class="back-link">{% trans "Cancel" %}</a>
         </form>
     </div>
 
@@ -349,7 +348,7 @@
         if (dbString) {
             const items = dbString.split('|');
             items.forEach(item => {
-                const match = item.match(/([A-Za-z]+)\s*\(₹(\d+)\/hr\)/);
+                const match = item.match(/([A-Za-z]+)\s*\(Rs\.?\s*(\d+)\/hr\)/);
                 if (match) { toolPrices[match[1]] = parseFloat(match[2]); }
             });
         }
@@ -401,3 +400,5 @@
 </body>
 
 </html>
+
+

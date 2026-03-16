@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -293,8 +293,7 @@
     </style>
 </head>
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">← Back</button>
-    {% include 'kisan1/partials/language_toggle.html' %}
+    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">Back</button>
     <div class="phone-shell">
         <div class="top-bar">
             <a href="javascript:history.back()" class="icon-btn" aria-label="Go back"><i class="fas fa-arrow-left"></i></a>
@@ -305,7 +304,7 @@
             <div class="app-icon"><i class="fas fa-store"></i></div>
             <div class="app-title">
                 <h1>{{ shop.shop_name }}</h1>
-                <p class="publisher">by {{ shop.user.name }} • Authorized Dealer</p>
+                <p class="publisher">by {{ shop.user.name }} - Authorized Dealer</p>
                 <div class="meta-row">
                     <span class="chip"><i class="fas fa-certificate"></i> License {{ shop.license_id }}</span>
                     <span class="chip"><i class="fas fa-map-marker-alt"></i> {{ shop.user.village }}</span>
@@ -315,7 +314,7 @@
         </div>
 
         <div class="stats">
-            <div class="stat"><strong>4.7★</strong><span>Farmer rating</span></div>
+            <div class="stat"><strong>4.7/5</strong><span>Farmer rating</span></div>
             <div class="stat"><strong>{{ inventory|length }}</strong><span>Products</span></div>
             <div class="stat"><strong>Fast</strong><span>Token issue</span></div>
             <div class="stat"><strong>Secure</strong><span>Gov records</span></div>
@@ -345,7 +344,7 @@
                         <div>
                             <h3>{{ item.item_name }}</h3>
                             <div class="availability"><i class="fas fa-circle-check"></i> {{ item.stock_quantity }} units available</div>
-                            <div class="price">₹{{ item.price }} / unit</div>
+                            <div class="price">Rs. {{ item.price }} / unit</div>
                         </div>
                         <div class="qty-wrap">
                             <label for="qty_{{ item.id }}" class="qty-label">Quantity</label>
@@ -373,7 +372,7 @@
 
             <div class="summary">
                 <div class="row"><span>Selected units</span><strong id="itemCount">0</strong></div>
-                <div class="total"><span>Estimated total</span><span>₹<span id="displayTotal">0.00</span></span></div>
+                <div class="total"><span>Estimated total</span><span>Rs. <span id="displayTotal">0.00</span></span></div>
                 <button type="submit" class="btn-primary"><i class="fas fa-cart-plus"></i> Continue to cart</button>
                 <a href="javascript:history.back()" class="btn-link">Cancel</a>
             </div>
@@ -402,3 +401,6 @@
     </script>
 </body>
 </html>
+
+
+

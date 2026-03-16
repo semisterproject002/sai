@@ -1,4 +1,4 @@
-{% load i18n %}
+﻿{% load i18n %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -179,15 +179,14 @@
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">← Back</button>
-    {% include 'kisan1/partials/language_toggle.html' %}
+    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">Back</button>
     <div class="booking-card">
         <div class="provider-info">
             <h3>{{ tractor.user.name }}</h3>
             <p><i class="fas fa-map-pin"></i> {% trans "Location:" %} <span>{{ tractor.user.village }}</span></p>
             <p><i class="fas fa-phone"></i> {% trans "Mobile:" %} <span>{{ tractor.user.mobile }}</span></p>
             <p><i class="fas fa-gear"></i> {% trans "Services:" %} <span>{{ tractor.services }}</span></p>
-            <p><i class="fas fa-coins"></i> {% trans "Rate:" %} <span>₹{{ tractor.wage_amount }} / {% trans "Hour" %}</span></p>
+            <p><i class="fas fa-coins"></i> {% trans "Rate:" %} <span>Rs. {{ tractor.wage_amount }} / {% trans "Hour" %}</span></p>
         </div>
 
         <form method="POST">
@@ -218,11 +217,11 @@
 
             <div class="total-box">
                 <span style="text-transform: uppercase; font-size: 11px; color: #aaa;">{% trans "Total Amount" %}</span>
-                <span class="total-amount">₹<span id="displayTotal">{{ tractor.wage_amount }}</span></span>
+                <span class="total-amount">Rs. <span id="displayTotal">{{ tractor.wage_amount }}</span></span>
             </div>
 
-            <button type="submit" class="btn-hire">🚜 {% trans "Confirm Booking" %}</button>
-            <a href="javascript:history.back()" class="back-link">⬅ {% trans "Cancel" %}</a>
+            <button type="submit" class="btn-hire">{% trans "Confirm Booking" %}</button>
+            <a href="javascript:history.back()" class="back-link">{% trans "Cancel" %}</a>
         </form>
     </div>
 
@@ -240,3 +239,5 @@
 </body>
 
 </html>
+
+

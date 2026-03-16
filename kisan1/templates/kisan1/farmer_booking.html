@@ -1,4 +1,4 @@
-{% load i18n %}
+﻿{% load i18n %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -313,15 +313,13 @@
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">← Back</button>
-    {% include 'kisan1/partials/language_toggle.html' %}
-
+    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">Back</button>
     <div class="container">
         <h2>{% trans "My Service Requests" %}</h2>
 
         {% if not has_bookings %}
         <div class="empty-state">
-            <h1>📂</h1>
+            <h1>{% trans "No Requests" %}</h1>
             <p style="font-size: 18px;">{% trans "Your request list is empty." %}</p>
             <p>{% trans "Explore our portal to find the best agricultural services." %}</p>
         </div>
@@ -339,7 +337,7 @@
                     to {{ booking.return_date }}</p>
             </div>
             <div style="text-align: right;">
-                <div class="price-tag">₹{{ booking.total_cost }}</div>
+                <div class="price-tag">Rs. {{ booking.total_cost }}</div>
                 <span class="status-badge status-{{ booking.status }}">{{ booking.status }}</span>
                 <div class="btn-group">
                     {% if booking.status == 'Pending' %}
@@ -373,7 +371,7 @@
                     booking.duration_hours }} {% trans "Hours" %}</p>
             </div>
             <div style="text-align: right;">
-                <div class="price-tag">₹{{ booking.total_cost }}</div>
+                <div class="price-tag">Rs. {{ booking.total_cost }}</div>
                 <span class="status-badge status-{{ booking.status }}">{{ booking.status }}</span>
                 <div class="btn-group">
                     {% if booking.status == 'Pending' %}
@@ -406,7 +404,7 @@
                     {% trans "Hours/Days" %}</p>
             </div>
             <div style="text-align: right;">
-                <div class="price-tag">₹{{ booking.total_cost }}</div>
+                <div class="price-tag">Rs. {{ booking.total_cost }}</div>
                 <span class="status-badge status-{{ booking.status }}">{{ booking.status }}</span>
                 {% if booking.status == 'Pending' %}
                 <form method="POST" action="{% url 'cancel_booking' 'labor' booking.id %}" class="btn-group">
@@ -432,7 +430,7 @@
                     booking.created_at|date:"M d, Y" }}</p>
             </div>
             <div style="text-align: right;">
-                <div class="price-tag">₹{{ booking.total_cost }}</div>
+                <div class="price-tag">Rs. {{ booking.total_cost }}</div>
                 <span class="status-badge status-{{ booking.status }}">{{ booking.status }}</span>
                 {% if booking.status == 'Pending' %}
                 <form method="POST" action="{% url 'cancel_booking' 'shop' booking.id %}" class="btn-group">
@@ -483,3 +481,5 @@
 </body>
 
 </html>
+
+

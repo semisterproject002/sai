@@ -11,9 +11,6 @@ logger = logging.getLogger(__name__)
 
 def load_telangana_pincodes(force=False):
     """Load bundled Telangana pincode/mandal/village data into DB."""
-    if not force and PincodeMapping.objects.exists():
-        return 0
-
     if force:
         PincodeMapping.objects.all().delete()
 
