@@ -3,7 +3,7 @@
 {% block content %}
 <div class="dashboard-shell">
     <div class="dashboard-topbar">
-        <button class="dash-back" onclick="window.history.back()">{% trans "Back" %}</button>
+        <a class="dash-back" href="{% url 'welcome' %}">← {% trans "Back" %}</a>
         <div class="dash-title">
             <span>{{ user.name|upper }}&#39;S {% trans "Dashboard" %}</span>
             <span>({% trans "Role" %}: {{ role|upper }})</span>
@@ -11,8 +11,11 @@
         <div class="menu-container">
             <button class="dash-menu">{% trans "Menu" %}</button>
             <div class="dropdown-content">
-                <a href="#service-settings" data-panel-target="service-settings">{% trans "Service Settings" %}</a>
+                <a href="#service-settings" data-panel-target="service-settings">{% trans "Shop Settings" %}</a>
                 <a href="#inventory-panel" data-panel-target="inventory-panel">{% trans "Inventory" %}</a>
+                <a href="#inventory-panel" data-panel-target="inventory-panel">{% trans "Product Management" %}</a>
+                <a href="#inventory-panel" data-panel-target="inventory-panel">{% trans "Stock Control" %}</a>
+                <a href="#orders-panel" data-panel-target="orders-panel">{% trans "Orders" %}</a>
                 <a href="{% url 'logout' %}">{% trans "Logout" %}</a>
             </div>
         </div>
@@ -46,9 +49,9 @@
         </div>
     </div>
 
-    <div class="section-title">
+    <div id="orders-panel" class="section-title">
         <span class="section-bar"></span>
-        {% trans "New Booking Requests" %}
+        {% trans "Orders" %}
     </div>
 
     <div class="request-grid">
@@ -85,7 +88,7 @@
     </div>
 
     <div id="service-settings" class="settings-panel">
-        <h3>{% trans "Service Settings" %}</h3>
+        <h3>{% trans "Shop Settings" %}</h3>
         <p>{% trans "Current Rate" %}: Rs {{ current_rate }}</p>
         <form method="post" action="{% url 'update_service_settings' role %}" class="settings-form">
             {% csrf_token %}

@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.core.exceptions import ValidationError
 
 class UserRegistration(models.Model):
     ROLE_CHOICES = (
@@ -121,6 +122,12 @@ class PesticideInventory(models.Model):
     category = models.CharField(max_length=50)
     price = models.PositiveIntegerField()
     stock_quantity = models.PositiveIntegerField()
+
+    def clean(self):
+        if self.price is None or self.price <= 0:
+            raise ValidationError({'price': 'Price must be greater than 0.'})
+        if self.stock_quantity is None or self.stock_quantity <= 0:
+            raise ValidationError({'stock_quantity': 'Stock quantity must be greater than 0.'})
 
     def __str__(self):
         return f"{self.item_name} ({self.shop.name})"
