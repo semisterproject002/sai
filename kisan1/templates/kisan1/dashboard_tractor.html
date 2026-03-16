@@ -2,252 +2,40 @@
 {% load i18n %}
 
 {% block content %}
-<style>
-    :root {
-        --tractor-green: #2e7d32;
-        --tractor-dark: #1b5e20;
-        --accent-yellow: #fbc02d;
-        --bg-light: #f1f8e9;
-    }
-
-    .dash-nav {
-        background: linear-gradient(120deg, var(--tractor-dark), var(--tractor-green));
-    }
-
-    body {
-        background: linear-gradient(rgba(8, 22, 16, 0.72), rgba(8, 22, 16, 0.72)), url('https://images.unsplash.com/photo-1592982537447-6f2a6a0fd8cb?auto=format&fit=crop&w=1600&q=80') center/cover fixed no-repeat;
-    }
-
-    .dashboard-container {
-        max-width: 1000px;
-        margin: 30px auto;
-        font-family: 'Poppins', sans-serif;
-        animation: slideIn 0.5s ease-out;
-    }
-
-    @keyframes slideIn {
-        from {
-            opacity: 0;
-            transform: scale(0.95);
-        }
-
-        to {
-            opacity: 1;
-            transform: scale(1);
-        }
-    }
-
-    /* Owner Profile Card */
-    .owner-banner {
-        background: linear-gradient(135deg, var(--tractor-dark), var(--tractor-green));
-        border-radius: 20px;
-        padding: 40px;
-        color: white;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        box-shadow: 0 10px 25px rgba(46, 125, 50, 0.2);
-        margin-bottom: 40px;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .owner-banner::before {
-        content: '🚜';
-        position: absolute;
-        right: -10px;
-        bottom: -20px;
-        font-size: 150px;
-        opacity: 0.1;
-        transform: rotate(-10deg);
-    }
-
-    .owner-info h2 {
-        margin: 0;
-        font-size: 30px;
-        font-weight: 800;
-    }
-
-    .location-tag {
-        margin-top: 8px;
-        background: rgba(255, 255, 255, 0.2);
-        padding: 5px 15px;
-        border-radius: 50px;
-        font-size: 14px;
-        display: inline-block;
-    }
-
-    /* Bookings Section */
-    .section-title {
-        color: #333;
-        font-weight: 700;
-        margin-bottom: 25px;
-        border-left: 5px solid var(--tractor-green);
-        padding-left: 15px;
-    }
-
-    .booking-grid {
-        display: grid;
-        gap: 20px;
-    }
-
-    .booking-card {
-        background: white;
-        border-radius: 18px;
-        padding: 25px;
-        border: 1px solid #eee;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        transition: all 0.3s ease;
-    }
-
-    .booking-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 25px rgba(0, 0, 0, 0.1);
-        border-color: var(--tractor-green);
-    }
-
-    .customer-name {
-        font-size: 18px;
-        font-weight: 700;
-        color: #2c3e50;
-    }
-
-    .details-text {
-        color: #666;
-        font-size: 14px;
-        margin-top: 5px;
-        font-style: italic;
-    }
-
-    /* Buttons */
-    .confirm-btn {
-        background: var(--tractor-green);
-        color: white;
-        border: none;
-        padding: 12px 25px;
-        border-radius: 10px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: 0.3s;
-        box-shadow: 0 4px 15px rgba(46, 125, 50, 0.3);
-    }
-
-    .confirm-btn:hover {
-        background: var(--tractor-dark);
-        transform: scale(1.05);
-    }
-
-    .status-confirmed {
-        background: #e8f5e9;
-        color: #2e7d32;
-        padding: 10px 20px;
-        border-radius: 10px;
-        font-weight: 800;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 60px;
-        background: white;
-        border-radius: 20px;
-        border: 2px dashed #ccc;
-        color: #888;
-    }
-</style>
-
-<div class="dash-nav">
-    <h3 style="margin: 0; text-transform: uppercase;">
-        {{ user.name|default:request.user.username }}'s Dashboard
-        <span style="font-size: 0.7em; opacity: 0.9; font-weight: 400; margin-left: 10px;">
-            (Role: {{ role|title }})
-        </span>
-    </h3>
-    <a href="{% url 'logout' %}" class="logout-btn">🚪 Logout</a>
-</div>
-
-<div class="filter-bar"
-    style="margin: 20px auto; max-width: 1000px; display: flex; align-items: center; gap: 15px; background: white; padding: 15px 20px; border-radius: 12px; border: 1px solid #eee;">
-    <label style="font-weight: bold; color: #333;">Filter Bookings:</label>
-    <select id="dashboardFilter" onchange="filterDashboard()"
-        style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; outline: none;">
-        <option value="all">All Requests</option>
-        <option value="pending">⏳ Pending (Accept Booking)</option>
-        <option value="confirmed">✅ Confirmed / Accepted</option>
-        <option value="cancelled">🚫 Cancelled</option>
-    </select>
-</div>
-
-<div class="dashboard-container">
-    <div class="owner-banner">
-        <div class="owner-info">
-            <h2>{{ user.name }}</h2>
-            <div class="location-tag">📍 {{ user.village }}, {{ user.mandal }}</div>
-        </div>
-        <div style="text-align: center;">
-            <div style="font-size: 14px; opacity: 0.8;">{% trans "Status" %}</div>
-            <div style="font-weight: bold; color: var(--accent-yellow);">{% trans "ACTIVE SERVICE" %}</div>
-        </div>
+<div class="main-wrapper">
+    <button class="back-btn" onclick="window.history.back()">← {% trans "Back" %}</button>
+    <div class="dash-nav">
+        <h3>{{ user.name }} — {% trans "Tractor Dashboard" %}</h3>
+        <a href="{% url 'logout' %}" class="logout-btn">{% trans "Logout" %}</a>
     </div>
 
-    <h3 class="section-title">🚜 {% trans "New Booking Requests" %}</h3>
+    <div class="section-card">
+        <h3>{% trans "Service Settings" %}</h3>
+        <p>{% trans "Current Rate" %}: ₹{{ current_rate }}/hr</p>
+        <form method="post" action="{% url 'update_service_settings' role %}" class="settings-form">
+            {% csrf_token %}
+            <label>{% trans "Change Rate" %}</label>
+            <input type="number" min="0" name="rate" value="{{ current_rate }}" required>
+            <label><input type="checkbox" name="is_available" {% if is_available %}checked{% endif %}> {% trans "Update Availability" %}</label>
+            <label>{% trans "Service Status" %}</label>
+            <select name="service_status">
+                <option value="Active" {% if service_status == 'Active' %}selected{% endif %}>{% trans "Active" %}</option>
+                <option value="Paused" {% if service_status == 'Paused' %}selected{% endif %}>{% trans "Paused" %}</option>
+            </select>
+            <button type="submit">{% trans "Change Rate" %}</button>
+        </form>
+    </div>
 
-    <div class="booking-grid">
+    <div class="section-card">
+        <h3>{% trans "Booking Requests" %}</h3>
         {% for req in work_requests %}
-        <div class="booking-card" data-status="{{ req.status|lower }}">
-            <div>
-                <div class="customer-name">👨‍🌾 Farmer: {{ req.farmer.name }}</div>
-                <div class="details-text">📞 Mobile: {{ req.farmer.mobile }}</div>
-                <div class="details-text">📍 Location: {{ req.location }}</div>
-                <div class="details-text" style="font-weight: 600; color: #444;">📅 {{ req.booking_date }} at {{ req.start_time|time:"h:i A" }}</div>
-                <div class="details-text">⏱️ Duration: {{ req.duration_hours }} Hours | 💰 Total: ₹{{ req.total_cost }}
-                </div>
-            </div>
-
-            <div>
-                {% if req.status == 'Pending' %}
-                <form action="{% url 'accept_tractor_booking' req.id %}" method="POST">
-                    {% csrf_token %}
-                    <button type="submit" class="confirm-btn">Accept Booking</button>
-                </form>
-                {% else %}
-                <div class="status-confirmed">
-                    ✅ {{ req.status }}
-                </div>
-                {% endif %}
-            </div>
+        <div class="booking-card">
+            <div>{{ req.farmer.name }} · {{ req.location }} · {{ req.booking_date }}</div>
+            {% if req.status == 'Pending' %}
+            <form action="{% url 'accept_tractor_booking' req.id %}" method="post">{% csrf_token %}<button>{% trans "Accept" %}</button></form>
+            {% else %}<span class="status-badge confirmed">{{ req.status }}</span>{% endif %}
         </div>
-        {% empty %}
-        <div class="empty-state">
-            <div style="font-size: 40px; margin-bottom: 15px;">⚙️</div>
-            <p>{% trans "No active bookings for your tractor right now." %}</p>
-            <small>{% trans "Available bookings will appear here." %}</small>
-        </div>
-        {% endfor %}
+        {% empty %}<p>{% trans "No active bookings." %}</p>{% endfor %}
     </div>
 </div>
-
-<script>
-    function filterDashboard() {
-        const filterValue = document.getElementById('dashboardFilter').value.toLowerCase();
-        const cards = document.querySelectorAll('.booking-card');
-
-        cards.forEach(card => {
-            // Get status from the data-status attribute we added to the card
-            const status = card.getAttribute('data-status');
-
-            if (filterValue === 'all') {
-                card.style.display = 'flex';
-            } else if (status === filterValue) {
-                card.style.display = 'flex';
-            } else {
-                card.style.display = 'none';
-            }
-        });
-    }
-</script>
 {% endblock %}

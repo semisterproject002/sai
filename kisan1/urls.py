@@ -23,6 +23,7 @@ urlpatterns = [
     # Dashboards & Main Pages
     path('main-home/', views.main_home, name='main_home'),
     path('dashboard/<str:role>/', views.dashboard, name='dashboard'),
+    path('dashboard/<str:role>/service-settings/', views.update_service_settings, name='update_service_settings'),
     
     # --- PRO CART & TRACKING PAGE ---
     path('cart/', views.cart_view, name='cart'),
