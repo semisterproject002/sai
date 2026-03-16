@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 
 from kisan1.location_service import get_cached_location_details, load_telangana_pincodes
-from kisan1.models import PincodeMapping
+from kisan1.models import Location, PincodeMapping
 
 
 def get_villages_by_pincode(request):
@@ -28,6 +28,13 @@ def get_location_api(request):
 
         location_data = get_cached_location_details(pincode_input)
         if location_data:
+            for village in location_data.get('villages', []):
+                Location.objects.get_or_create(
+                    pincode=pincode_input,
+                    district=location_data['district'],
+                    mandal=location_data['mandal'],
+                    village=village,
+                )
             return JsonResponse({
                 'success': True,
                 'district': location_data['district'],

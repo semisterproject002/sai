@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from kisan1.models import (
     FarmerProfile,
     LaborProfile,
+    Location,
     LeaseProfile,
     PesticideProfile,
     ToolsProfile,
@@ -69,12 +70,13 @@ def _is_positive_int(value, min_value=1, max_value=None):
 
 def _validate_common_registration_fields(request, template_name, *, name, mobile):
     age_raw = (request.POST.get('age') or '').strip()
+    pincode = (request.POST.get('pincode') or '').strip()
     state = (request.POST.get('state') or '').strip()
     district = (request.POST.get('district') or '').strip()
     mandal = (request.POST.get('mandal') or '').strip()
     village = (request.POST.get('village') or '').strip()
 
-    if not name or not mobile or not age_raw or not state or not district or not mandal or not village:
+    if not name or not mobile or not age_raw or not pincode or not state or not district or not mandal or not village:
         messages.error(request, "Please fill in all required fields before continuing.")
         return render(request, template_name)
 
@@ -126,6 +128,7 @@ def handle_registration(request, role, template_name):
             'age': request.POST.get('age') or None,
             'mobile': mobile,
             'role': role,
+            'pincode': request.POST.get('pincode'),
             'state': request.POST.get('state'),
             'district': request.POST.get('district'),
             'mandal': request.POST.get('mandal'),
@@ -363,6 +366,13 @@ def verify_otp(request):
                 for key, value in core.items():
                     setattr(user, key, value)
 
+            location_obj, _ = Location.objects.get_or_create(
+                pincode=core.get('pincode') or '',
+                district=core.get('district') or '',
+                mandal=core.get('mandal') or '',
+                village=core.get('village') or '',
+            )
+            user.location = location_obj
             user.is_verified = True
             user.save()
 

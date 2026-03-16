@@ -21,6 +21,11 @@ class UserRegistration(models.Model):
     district = models.CharField(max_length=100, null=True, blank=True)
     mandal = models.CharField(max_length=100, null=True, blank=True)
     village = models.CharField(max_length=100, null=True, blank=True)
+    pincode = models.CharField(max_length=6, null=True, blank=True)
+    location = models.ForeignKey('Location', on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
+
+    is_available = models.BooleanField(default=True)
+    service_status = models.CharField(max_length=20, default='Active')
 
     is_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -109,6 +114,7 @@ class PesticideProfile(models.Model):
     license_id = models.CharField(max_length=50)
     since_years = models.PositiveIntegerField(default=0)
     products_sold = models.CharField(max_length=200, null=True, blank=True)
+    service_rate = models.PositiveIntegerField(default=0)
 class PesticideInventory(models.Model):
     shop = models.ForeignKey(UserRegistration, on_delete=models.CASCADE, related_name='inventory')
     item_name = models.CharField(max_length=150)
@@ -225,3 +231,16 @@ class PincodeMapping(models.Model):
             models.Index(fields=['pincode']),
             models.Index(fields=['district', 'mandal']),
         ]
+
+
+class Location(models.Model):
+    pincode = models.CharField(max_length=6, db_index=True)
+    district = models.CharField(max_length=100)
+    mandal = models.CharField(max_length=100)
+    village = models.CharField(max_length=100)
+
+    class Meta:
+        unique_together = ('pincode', 'district', 'mandal', 'village')
+
+    def __str__(self):
+        return f"{self.pincode} - {self.village}, {self.mandal}, {self.district}"

@@ -1,7 +1,12 @@
 from django import forms
 from django.core.validators import RegexValidator
 
-from kisan1.models import PesticideInventory, PesticideProfile
+from kisan1.models import (
+    LaborBooking,
+    PesticideInventory,
+    PesticideProfile,
+    TractorBooking,
+)
 
 
 mobile_validator = RegexValidator(
@@ -55,15 +60,19 @@ class ShopItemForm(forms.ModelForm):
         return value
 
 
-from django import forms
-from .models import LaborBooking, TractorBooking
-
 class LaborBookingRequestForm(forms.ModelForm):
     class Meta:
         model = LaborBooking
         fields = ['booking_date', 'start_time', 'duration', 'location']
 
+
 class TractorBookingRequestForm(forms.ModelForm):
     class Meta:
         model = TractorBooking
         fields = ['booking_date', 'start_time', 'duration_hours', 'location']
+
+
+class ServiceSettingsForm(forms.Form):
+    rate = forms.IntegerField(min_value=0)
+    is_available = forms.BooleanField(required=False)
+    service_status = forms.ChoiceField(choices=[('Active', 'Active'), ('Paused', 'Paused')])

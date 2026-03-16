@@ -6,7 +6,7 @@ from django.db.models import Count, Sum
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.core.paginator import Paginator
-from kisan1.forms import LaborBookingRequestForm, TractorBookingRequestForm
+from kisan1.forms import LaborBookingRequestForm, ServiceSettingsForm, TractorBookingRequestForm
 
 from kisan1.models import (
     BookingStatus,
@@ -14,6 +14,7 @@ from kisan1.models import (
     LaborProfile,
     LeaseLandRequest,
     LeaseProfile,
+    Location,
     Order,
     PesticideInventory,
     PesticideProfile,
@@ -134,6 +135,57 @@ def main_home(request):
     })
 
 
+
+def _get_service_settings(user_profile, role):
+    if role == 'tractor' and hasattr(user_profile, 'tractor_details'):
+        return user_profile.tractor_details.wage_amount
+    if role == 'labor' and hasattr(user_profile, 'labor_details'):
+        return user_profile.labor_details.wage_amount
+    if role == 'tools' and hasattr(user_profile, 'tools_details'):
+        return user_profile.tools_details.rent_per_hour
+    if role == 'lease' and hasattr(user_profile, 'lease_details'):
+        return user_profile.lease_details.lease_per_day
+    if role == 'pesticide' and hasattr(user_profile, 'pesticide_details'):
+        return user_profile.pesticide_details.service_rate
+    return 0
+
+
+def _set_service_rate(user_profile, role, rate):
+    if role == 'tractor' and hasattr(user_profile, 'tractor_details'):
+        user_profile.tractor_details.wage_amount = rate
+        user_profile.tractor_details.save(update_fields=['wage_amount'])
+    elif role == 'labor' and hasattr(user_profile, 'labor_details'):
+        user_profile.labor_details.wage_amount = rate
+        user_profile.labor_details.save(update_fields=['wage_amount'])
+    elif role == 'tools' and hasattr(user_profile, 'tools_details'):
+        user_profile.tools_details.rent_per_hour = rate
+        user_profile.tools_details.save(update_fields=['rent_per_hour'])
+    elif role == 'lease' and hasattr(user_profile, 'lease_details'):
+        user_profile.lease_details.lease_per_day = rate
+        user_profile.lease_details.save(update_fields=['lease_per_day'])
+    elif role == 'pesticide' and hasattr(user_profile, 'pesticide_details'):
+        user_profile.pesticide_details.service_rate = rate
+        user_profile.pesticide_details.save(update_fields=['service_rate'])
+
+
+@session_login_required
+def update_service_settings(request, role):
+    if request.method != 'POST':
+        return redirect('dashboard', role=role)
+
+    user_profile = get_object_or_404(UserRegistration, mobile=request.session['mobile'], role=role)
+    form = ServiceSettingsForm(request.POST)
+    if not form.is_valid():
+        messages.error(request, 'Please provide valid service settings values.')
+        return redirect('dashboard', role=role)
+
+    _set_service_rate(user_profile, role, form.cleaned_data['rate'])
+    user_profile.is_available = form.cleaned_data['is_available']
+    user_profile.service_status = form.cleaned_data['service_status']
+    user_profile.save(update_fields=['is_available', 'service_status'])
+    messages.success(request, 'Service settings updated successfully.')
+    return redirect('dashboard', role=role)
+
 def dashboard(request, role):
     if not check_login(request):
         return redirect('login')
@@ -143,8 +195,11 @@ def dashboard(request, role):
     
     # 2. Add 'role' and 'user_profile' to the context explicitly
     context = {
-        'user': user_profile, 
-        'role': role  # <--- THIS IS THE KEY! This fixes the (ROLE: ) empty bracket.
+        'user': user_profile,
+        'role': role,
+        'current_rate': _get_service_settings(user_profile, role),
+        'service_status': user_profile.service_status,
+        'is_available': user_profile.is_available,
     }
 
     if role == 'labor':
