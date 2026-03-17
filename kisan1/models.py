@@ -2,7 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
-
+from django.contrib.auth.models import User
 from kisan1.pincode_data import is_hidden_pincode
 
 
@@ -285,3 +285,16 @@ class Location(models.Model):
 
     def __str__(self):
         return f"{self.pincode} - {self.village}, {self.mandal}, {self.district}"
+ 
+
+class Inventory(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    item_name = models.CharField(max_length=100)
+    category = models.CharField(max_length=50)
+    unit = models.CharField(max_length=20)
+    market_price = models.FloatField()
+    price = models.FloatField()
+    stock_quantity = models.IntegerField()
+
+    def __str__(self):
+        return self.item_name
