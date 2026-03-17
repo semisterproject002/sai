@@ -206,11 +206,41 @@
             transform: scale(0.98) translateY(0);
             box-shadow: 0 4px 10px rgba(17, 138, 40, 0.2);
         }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 9999;
+
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+
+            padding: 10px 16px;
+            border-radius: 10px;
+
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: #ffffff;
+            color: #042409;
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">{% trans "Back" %}</button>
+    <a href="{% url 'register_choice' %}" class="back-btn">Back</a>
+
     <div class="reg-card">
         <h2>{% trans "Lease Land Registration" %}</h2>
         <p>{% trans "List your property and find the best farmers" %}</p>
@@ -241,7 +271,8 @@
             <div class="form-group">
                 <label>{% trans "Pincode (Try: 503224, 506002, 500038):" %}</label>
                 <input type="text" id="pincode" name="pincode" placeholder="{% trans 'Enter 6-digit Pincode' %}"
-                    minlength="6" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" oninput="fetchLocationDetails()" required>
+                    minlength="6" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" oninput="fetchLocationDetails()"
+                    required>
             </div>
 
             <div class="input-row">
@@ -251,14 +282,16 @@
                 </div>
                 <div class="form-group">
                     <label>{% trans "District:" %}</label>
-                    <input type="text" id="district" name="district" placeholder="{% trans 'Auto-filled' %}" maxlength="100" readonly required>
+                    <input type="text" id="district" name="district" placeholder="{% trans 'Auto-filled' %}"
+                        maxlength="100" readonly required>
                 </div>
             </div>
 
             <div class="input-row">
                 <div class="form-group">
                     <label>{% trans "Mandal:" %}</label>
-                    <input type="text" id="mandal" name="mandal" placeholder="{% trans 'Auto-filled' %}" maxlength="100" readonly required>
+                    <input type="text" id="mandal" name="mandal" placeholder="{% trans 'Auto-filled' %}" maxlength="100"
+                        readonly required>
                 </div>
                 <div class="form-group">
                     <label>{% trans "Village:" %}</label>
@@ -298,15 +331,15 @@
                     </div>
                     <div class="soil-row">
                         <label><input type="checkbox" name="soils" value="Black_Soil"> {% trans "Black Soil" %}</label>
-                        <input type="number" step="0.1" name="acres_Black_Soil" min="0.1" max="10000" inputmode="decimal"
-                            placeholder="{% trans 'Acres?' %}">
+                        <input type="number" step="0.1" name="acres_Black_Soil" min="0.1" max="10000"
+                            inputmode="decimal" placeholder="{% trans 'Acres?' %}">
                         <input type="number" name="cost_Black_Soil" min="1" max="100000" step="1" inputmode="numeric"
                             placeholder="{% trans ' per acre (Rs.)' %}">
                     </div>
                     <div class="soil-row">
                         <label><input type="checkbox" name="soils" value="Alluvial_Soil"> {% trans "Alluvial" %}</label>
-                        <input type="number" step="0.1" name="acres_Alluvial_Soil" min="0.1" max="10000" inputmode="decimal"
-                            placeholder="{% trans 'Acres?' %}">
+                        <input type="number" step="0.1" name="acres_Alluvial_Soil" min="0.1" max="10000"
+                            inputmode="decimal" placeholder="{% trans 'Acres?' %}">
                         <input type="number" name="cost_Alluvial_Soil" min="1" max="100000" step="1" inputmode="numeric"
                             placeholder="{% trans ' per acre (Rs.)' %}">
                     </div>
@@ -374,4 +407,3 @@
 </body>
 
 </html>
-

@@ -460,12 +460,13 @@ def verify_otp(request):
 
 
 def login_view(request):
-    if check_login(request):
-        role = request.session.get('active_role') or request.session.get('role')
-        if role == 'farmer':
-            return redirect('main_home')
-        if role:
-            return redirect('dashboard', role=role)
+    # ❌ REMOVE / COMMENT THIS BLOCK
+    # if check_login(request):
+    #     role = request.session.get('active_role') or request.session.get('role')
+    #     if role == 'farmer':
+    #         return redirect('main_home')
+    #     if role:
+    #         return redirect('dashboard', role=role)
 
     if request.method == "POST":
         mobile = request.POST.get('mobile', '').strip()
@@ -504,7 +505,6 @@ def login_view(request):
         return redirect('verify_otp_login')
 
     return render(request, 'kisan1/login.html')
-
 
 def otp_view(request):
     otp_payload = request.session.get('login_otp')

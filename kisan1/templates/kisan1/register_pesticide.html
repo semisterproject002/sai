@@ -27,6 +27,38 @@
             background: linear-gradient(135deg, var(--dark-green) 0%, #1b5e20 100%);
         }
 
+        /* ✅ NEW BACK BUTTON STYLE */
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 9999;
+
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+
+            color: #ffffff;
+            border: none;
+            font-weight: 600;
+            font-size: 14px;
+
+            padding: 10px 16px;
+            border-radius: 10px;
+
+            cursor: pointer;
+
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: #ffffff;
+            color: #0f3d2e;
+            transform: translateY(-2px);
+        }
+
         .reg-card {
             background: var(--glass-bg);
             padding: 40px;
@@ -161,7 +193,9 @@
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">{% trans "Back" %}</button>
+    <!-- ✅ UPDATED BUTTON (no inline style) -->
+    <button onclick="window.history.back()" class="back-btn">{% trans "Back" %}</button>
+
     <div class="reg-card">
         <h2>{% trans "Shop Registration" %}</h2>
         <p>{% trans "Join the Kisan Asara network & grow your business" %}</p>
@@ -170,10 +204,11 @@
             {% csrf_token %}
             <input type="hidden" name="role" value="pesticide">
 
+            <!-- rest of your code unchanged -->
             <div class="form-group">
                 <label>{% trans "Shop Name:" %}</label>
-                <input type="text" name="shop_name" placeholder="{% trans 'e.g., Sri Sai Fertilizers' %}"
-                    minlength="3" maxlength="150" autocomplete="organization" required>
+                <input type="text" name="shop_name" placeholder="{% trans 'e.g., Sri Sai Fertilizers' %}" minlength="3"
+                    maxlength="150" autocomplete="organization" required>
             </div>
 
             <div class="form-group">
@@ -198,7 +233,8 @@
             <div class="form-group">
                 <label>{% trans "Pincode (Try: 503224, 506002, 500038):" %}</label>
                 <input type="text" id="pincode" name="pincode" placeholder="{% trans 'Enter 6-digit Pincode' %}"
-                    minlength="6" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" oninput="fetchLocationDetails()" required>
+                    minlength="6" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" oninput="fetchLocationDetails()"
+                    required>
             </div>
 
             <div class="input-row">
@@ -208,14 +244,16 @@
                 </div>
                 <div class="form-group">
                     <label>{% trans "District:" %}</label>
-                    <input type="text" id="district" name="district" placeholder="{% trans 'Auto-filled' %}" maxlength="100" readonly required>
+                    <input type="text" id="district" name="district" placeholder="{% trans 'Auto-filled' %}"
+                        maxlength="100" readonly required>
                 </div>
             </div>
 
             <div class="input-row">
                 <div class="form-group">
                     <label>{% trans "Mandal:" %}</label>
-                    <input type="text" id="mandal" name="mandal" placeholder="{% trans 'Auto-filled' %}" maxlength="100" readonly required>
+                    <input type="text" id="mandal" name="mandal" placeholder="{% trans 'Auto-filled' %}" maxlength="100"
+                        readonly required>
                 </div>
                 <div class="form-group">
                     <label>{% trans "Village:" %}</label>
@@ -232,7 +270,8 @@
                         minlength="8" maxlength="20" pattern="^[A-Z0-9\-]{8,20}$" style="text-transform: uppercase;"
                         title="License must be 8-20 characters long and contain only uppercase letters, numbers, and hyphens (-)."
                         oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9\-]/g, '');" required>
-                    <small style="color: #666; font-size: 11px; margin-top: 4px; display: block;">* {% trans "8-20 letters, numbers, or hyphens (-)." %}</small>
+                    <small style="color: #666; font-size: 11px; margin-top: 4px; display: block;">* {% trans "8-20
+                        letters, numbers, or hyphens (-)." %}</small>
                 </div>
                 <div class="form-group">
                     <label>{% trans "Since Years:" %}</label>
@@ -275,4 +314,3 @@
 </body>
 
 </html>
-

@@ -225,8 +225,8 @@ button:active,
 /* Header Buttons (Back, Logout) */
 .back-btn,
 .logout-btn {
-    background: linear-gradient(135deg, rgba(255,255,255,0.24), rgba(255,255,255,0.14));
-    border: 1px solid rgba(255,255,255,0.35);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.14));
+    border: 1px solid rgba(255, 255, 255, 0.35);
     color: white;
     padding: 10px 16px;
     border-radius: 999px;
@@ -242,9 +242,9 @@ button:active,
 
 .back-btn:hover,
 .logout-btn:hover {
-    background: linear-gradient(135deg, rgba(255,255,255,0.34), rgba(255,255,255,0.2));
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.2));
     transform: translateY(-2px);
-    box-shadow: 0 8px 18px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
 }
 
 /* Dropdown Menu Container */
@@ -428,9 +428,9 @@ button:active,
 
 .dash-back {
     justify-self: start;
-    background: linear-gradient(135deg, rgba(255,255,255,0.24), rgba(255,255,255,0.12));
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.12));
     color: #ffffff;
-    border: 1px solid rgba(255,255,255,0.35);
+    border: 1px solid rgba(255, 255, 255, 0.35);
     padding: 10px 16px;
     border-radius: 999px;
     font-size: 14px;
@@ -453,9 +453,9 @@ button:active,
 }
 
 .dash-back:hover {
-    background: linear-gradient(135deg, rgba(255,255,255,0.34), rgba(255,255,255,0.2));
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.2));
     transform: translateY(-1px);
-    box-shadow: 0 8px 18px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
 }
 
 .dash-title {
@@ -809,4 +809,33 @@ button:active,
     .profile-status {
         text-align: left;
     }
+}
+
+.back-btn {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 9999;
+
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+
+    padding: 10px 16px;
+    border-radius: 10px;
+
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+    transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+    background: #ffffff;
+    color: #0a3d14;
+    transform: translateY(-2px);
 }

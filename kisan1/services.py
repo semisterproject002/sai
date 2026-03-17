@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.db.models import Q
+import logging
 
 from kisan1.models import (
     BookingStatus,
@@ -7,6 +8,7 @@ from kisan1.models import (
     Order,
     TractorBooking,
 )
+logger = logging.getLogger(__name__)
 
 ACTIVE_BOOKING_STATES = [BookingStatus.PENDING, BookingStatus.CONFIRMED]
 
@@ -102,8 +104,13 @@ def update_order_status(*, booking, provider, service_type, status):
             status__in=ACTIVE_BOOKING_STATES + [BookingStatus.CANCELLED],
         ).update(status=status)
     except Exception as exc:
-        logger.exception('order_status_update_failed booking_id=%s status=%s', getattr(booking, 'id', None), status)
+        logger.exception(
+            'order_status_update_failed booking_id=%s status=%s',
+            getattr(booking, 'id', None),
+            status
+        )
         raise ValueError('Unable to update order status.') from exc
+
     Order.objects.select_for_update().filter(
         user=booking.farmer,
         provider=provider,

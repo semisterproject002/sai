@@ -211,11 +211,40 @@
             transform: scale(0.98) translateY(0);
             box-shadow: 0 4px 10px rgba(17, 138, 40, 0.2);
         }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 9999;
+
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+
+            padding: 10px 16px;
+            border-radius: 10px;
+
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: #ffffff;
+            color: #042409;
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">{% trans "Back" %}</button>
+    <a href="{% url 'register_choice' %}" class="back-btn">Back</a>
     <div class="reg-card">
         <h2>{% trans "Labor Registration" %}</h2>
         <p>{% trans "Complete your profile & get employability / work opportunities" %}</p>
@@ -271,7 +300,8 @@
             <div class="form-group">
                 <label>{% trans "Pincode (Try: 503224, 506002, 500038):" %}</label>
                 <input type="text" id="pincode" name="pincode" placeholder="{% trans 'Enter 6-digit Pincode' %}"
-                    minlength="6" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" oninput="fetchLocationDetails()" required>
+                    minlength="6" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" oninput="fetchLocationDetails()"
+                    required>
             </div>
 
             <div class="input-row">
@@ -281,14 +311,16 @@
                 </div>
                 <div class="form-group">
                     <label>{% trans "District:" %}</label>
-                    <input type="text" id="district" name="district" placeholder="{% trans 'Auto-filled' %}" maxlength="100" readonly required>
+                    <input type="text" id="district" name="district" placeholder="{% trans 'Auto-filled' %}"
+                        maxlength="100" readonly required>
                 </div>
             </div>
 
             <div class="input-row">
                 <div class="form-group">
                     <label>{% trans "Mandal:" %}</label>
-                    <input type="text" id="mandal" name="mandal" placeholder="{% trans 'Auto-filled' %}" maxlength="100" readonly required>
+                    <input type="text" id="mandal" name="mandal" placeholder="{% trans 'Auto-filled' %}" maxlength="100"
+                        readonly required>
                 </div>
                 <div class="form-group">
                     <label>{% trans "Village:" %}</label>
@@ -303,15 +335,18 @@
                 <div class="skills-container">
                     <div class="skill-row">
                         <label><input type="checkbox" name="skills" value="Harvesting"> {% trans "Harvesting" %}</label>
-                        <input type="number" name="exp_Harvesting" min="0" max="60" step="1" inputmode="numeric" placeholder="{% trans 'Years of exp' %}">
+                        <input type="number" name="exp_Harvesting" min="0" max="60" step="1" inputmode="numeric"
+                            placeholder="{% trans 'Years of exp' %}">
                     </div>
                     <div class="skill-row">
                         <label><input type="checkbox" name="skills" value="Ploughing"> {% trans "Ploughing" %}</label>
-                        <input type="number" name="exp_Ploughing" min="0" max="60" step="1" inputmode="numeric" placeholder="{% trans 'Years of exp' %}">
+                        <input type="number" name="exp_Ploughing" min="0" max="60" step="1" inputmode="numeric"
+                            placeholder="{% trans 'Years of exp' %}">
                     </div>
                     <div class="skill-row">
                         <label><input type="checkbox" name="skills" value="Sowing"> {% trans "Sowing" %}</label>
-                        <input type="number" name="exp_Sowing" min="0" max="60" step="1" inputmode="numeric" placeholder="{% trans 'Years of exp' %}">
+                        <input type="number" name="exp_Sowing" min="0" max="60" step="1" inputmode="numeric"
+                            placeholder="{% trans 'Years of exp' %}">
                     </div>
                 </div>
             </div>
@@ -319,9 +354,11 @@
             {% if messages %}
             <div class="container mt-3 mb-3">
                 {% for message in messages %}
-                    <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert" style="color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid;">
-                        <strong>Wait!</strong> {{ message }}
-                    </div>
+                <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-{{ message.tags }}{% endif %} alert-dismissible fade show"
+                    role="alert"
+                    style="color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid;">
+                    <strong>Wait!</strong> {{ message }}
+                </div>
                 {% endfor %}
             </div>
             {% endif %}
@@ -330,9 +367,9 @@
         </form>
     </div>
     <script src="{% static 'js/location.js' %}"></script>
-    
+
     <script>
-        document.getElementById('laborForm').addEventListener('submit', function(event) {
+        document.getElementById('laborForm').addEventListener('submit', function (event) {
             const checkedSkills = document.querySelectorAll('input[name="skills"]:checked');
 
             if (checkedSkills.length === 0) {
@@ -354,4 +391,3 @@
 </body>
 
 </html>
-
