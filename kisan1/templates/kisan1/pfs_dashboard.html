@@ -14,7 +14,6 @@
                 <a href="#service-settings" data-panel-target="service-settings">{% trans "Shop Settings" %}</a>
                 <a href="#inventory-panel" data-panel-target="inventory-panel">{% trans "Inventory" %}</a>
                 <a href="#inventory-panel" data-panel-target="inventory-panel">{% trans "Product Management" %}</a>
-                <a href="#inventory-panel" data-panel-target="inventory-panel">{% trans "Stock Control" %}</a>
                 <a href="#orders-panel" data-panel-target="orders-panel">{% trans "Orders" %}</a>
                 <a href="{% url 'logout' %}">{% trans "Logout" %}</a>
             </div>
@@ -113,8 +112,14 @@
             <label for="itemName">{% trans "Product Name" %}</label>
             <input id="itemName" type="text" name="item_name" maxlength="150" required>
             <label for="itemCategory">{% trans "Category" %}</label>
-            <input id="itemCategory" type="text" name="category" maxlength="50" required>
-            <label for="itemPrice">{% trans "Price" %}</label>
+            <select id="itemCategory" name="category" required>
+                <option value="Seeds">{% trans "Seeds" %}</option>
+                <option value="Fertilizer">{% trans "Fertilizer" %}</option>
+                <option value="Pesticides">{% trans "Pesticides" %}</option>
+            </select>
+            <label for="itemMarketPrice">{% trans "Market Price" %}</label>
+            <input id="itemMarketPrice" type="number" name="market_price" min="1" max="100000" required>
+            <label for="itemPrice">{% trans "Shop Price" %}</label>
             <input id="itemPrice" type="number" name="price" min="1" max="100000" required>
             <label for="itemStock">{% trans "Stock Quantity" %}</label>
             <input id="itemStock" type="number" name="stock_quantity" min="1" max="100000" required>
@@ -124,19 +129,39 @@
         </form>
 
         {% if inventory %}
-            <div class="request-grid" style="margin-top: 16px;">
-                {% for item in inventory %}
-                <div class="request-card">
-                    <div class="request-header">
-                        <div class="request-name">{{ item.item_name }}</div>
-                        <span class="status-pill confirmed">{% trans "In Stock" %}</span>
-                    </div>
-                    <div class="request-meta">
-                        <span>{% trans "Price" %}: Rs {{ item.price }}</span>
-                        <span>{% trans "Quantity" %}: {{ item.stock_quantity }}</span>
-                    </div>
-                </div>
-                {% endfor %}
+            <div style="margin-top: 16px; overflow-x:auto;">
+                <table style="width:100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left; padding:8px;">{% trans "Product" %}</th>
+                            <th style="text-align:left; padding:8px;">{% trans "Category" %}</th>
+                            <th style="text-align:left; padding:8px;">{% trans "Market Price" %}</th>
+                            <th style="text-align:left; padding:8px;">{% trans "Shop Price" %}</th>
+                            <th style="text-align:left; padding:8px;">{% trans "Quantity" %}</th>
+                            <th style="text-align:left; padding:8px;">{% trans "Action" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in inventory %}
+                        <tr>
+                            <td style="padding:8px;">{{ item.item_name }}</td>
+                            <td style="padding:8px;">{{ item.category }}</td>
+                            <td style="padding:8px;">Rs {{ item.market_price }}</td>
+                            <td style="padding:8px;">
+                                <form method="post" style="display:flex; gap:8px; align-items:center;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="item_id" value="{{ item.id }}">
+                                    <input type="number" name="shop_price" value="{{ item.price }}" min="1" max="100000" required style="width:110px;">
+                            </td>
+                            <td style="padding:8px;">{{ item.stock_quantity }}</td>
+                            <td style="padding:8px;">
+                                    <button type="submit" name="save_shop_price">{% trans "Save" %}</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         {% else %}
             <p>{% trans "No stock added yet." %}</p>

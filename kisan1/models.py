@@ -120,10 +120,13 @@ class PesticideInventory(models.Model):
     shop = models.ForeignKey(UserRegistration, on_delete=models.CASCADE, related_name='inventory')
     item_name = models.CharField(max_length=150)
     category = models.CharField(max_length=50)
+    market_price = models.PositiveIntegerField(default=1)
     price = models.PositiveIntegerField()
     stock_quantity = models.PositiveIntegerField()
 
     def clean(self):
+        if self.market_price is None or self.market_price <= 0:
+            raise ValidationError({'market_price': 'Market price must be greater than 0.'})
         if self.price is None or self.price <= 0:
             raise ValidationError({'price': 'Price must be greater than 0.'})
         if self.stock_quantity is None or self.stock_quantity <= 0:
