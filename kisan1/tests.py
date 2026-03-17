@@ -327,22 +327,6 @@ class KisanAsaraTests(TestCase):
                 'stock_quantity': '10',
             },
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(PesticideInventory.objects.filter(shop=self.shop_user, item_name='Starter Combo').exists())
-
-    def test_pfs_inventory_accepts_allowed_category(self):
-        self._set_session(self.shop_user, 'pesticide')
-        response = self.client.post(
-            reverse('dashboard', kwargs={'role': 'pesticide'}),
-            {
-                'add_product': '1',
-                'item_name': 'Starter Combo',
-                'category': 'Pesticides',
-                'market_price': '1600',
-                'price': '1500',
-                'stock_quantity': '10',
-            },
-        )
         self.assertRedirects(response, reverse('dashboard', kwargs={'role': 'pesticide'}))
         item = PesticideInventory.objects.get(shop=self.shop_user, item_name='Starter Combo', category='Pesticides')
         self.assertEqual(item.market_price, 1600)
@@ -368,7 +352,7 @@ class KisanAsaraTests(TestCase):
         )
         response = self.client.post(
             reverse('dashboard', kwargs={'role': 'pesticide'}),
-            {'update_product_price': '1', 'item_id': str(item.id), 'new_price': '1050'},
+            {'save_shop_price': '1', 'item_id': str(item.id), 'shop_price': '1050'},
         )
         self.assertRedirects(response, reverse('dashboard', kwargs={'role': 'pesticide'}))
         item.refresh_from_db()
@@ -389,6 +373,33 @@ class KisanAsaraTests(TestCase):
                 mandal='Kamareddy',
                 village='Hidden Village',
             )
+
+
+
+    def test_hidden_pincode_location_data_is_blocked(self):
+        response = self.client.get(reverse('get_location_api'), {'pincode': '503111'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'success': False})
+
+
+
+    def test_pfs_shop_owner_can_save_shop_price(self):
+        self._set_session(self.shop_user, 'pesticide')
+        item = PesticideInventory.objects.create(
+            shop=self.shop_user,
+            item_name='Urea',
+            category='Fertilizer',
+            market_price=1200,
+            price=1100,
+            stock_quantity=10,
+        )
+        response = self.client.post(
+            reverse('dashboard', kwargs={'role': 'pesticide'}),
+            {'save_shop_price': '1', 'item_id': str(item.id), 'shop_price': '1050'},
+        )
+        self.assertRedirects(response, reverse('dashboard', kwargs={'role': 'pesticide'}))
+        item.refresh_from_db()
+        self.assertEqual(item.price, 1050)
 
     def test_new_service_pincodes_are_available(self):
         load_telangana_pincodes(force=True)

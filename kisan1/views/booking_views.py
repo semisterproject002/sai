@@ -234,41 +234,37 @@ def dashboard(request, role):
                     market_price = item_form.cleaned_data['market_price']
                     price = item_form.cleaned_data['price']
                     stock_quantity = item_form.cleaned_data['stock_quantity']
-                    inventory_item, created = PesticideInventory.objects.update_or_create(
-                        shop=user_profile,
-                        item_name=item_name,
-                        category=category,
-                        defaults={
-                            'market_price': market_price,
-                            'price': price,
-                            'stock_quantity': stock_quantity,
-                        },
-                    )
+                    normalized_categories = _expand_product_categories(category)
+
+                    inventory_item = None
+                    created = False
+                    for normalized_category in normalized_categories:
+                        inventory_item, item_created = PesticideInventory.objects.update_or_create(
+                            shop=user_profile,
+                            item_name=item_name,
+                            category=normalized_category,
+                            defaults={
+                                'market_price': market_price,
+                                'price': price,
+                                'stock_quantity': stock_quantity,
+                            },
+                        )
+                        created = created or item_created
 
                     _sync_shop_available_products(shop_profile)
                     action = 'added' if created else 'updated'
                     messages.success(request, f"Product '{inventory_item.item_name}' {action} in inventory.")
                     return redirect('dashboard', role='pesticide')
-            elif 'update_product_price' in request.POST:
+            elif 'save_shop_price' in request.POST:
                 item_id = request.POST.get('item_id')
-                new_price = request.POST.get('new_price')
-                try:
-                    parsed_price = int(new_price)
-                    if parsed_price <= 0:
-                        raise ValueError
-                except (TypeError, ValueError):
-                    messages.error(request, 'Please enter a valid product price greater than 0.')
-                    return redirect('dashboard', role='pesticide')
-
+                shop_price = request.POST.get('shop_price')
                 try:
                     item = PesticideInventory.objects.get(id=item_id, shop=user_profile)
+                    item.price = _parse_positive_int(shop_price, default=item.price)
+                    item.save(update_fields=['price'])
+                    messages.success(request, f"Updated shop price for '{item.item_name}'.")
                 except PesticideInventory.DoesNotExist:
                     messages.error(request, 'Unable to update price for this product.')
-                    return redirect('dashboard', role='pesticide')
-
-                item.price = parsed_price
-                item.save(update_fields=['price'])
-                messages.success(request, 'Price is updated successfully!')
                 return redirect('dashboard', role='pesticide')
 
         context['shop'] = shop_profile
