@@ -6,6 +6,7 @@ from datetime import timedelta
 
 import requests
 from django.conf import settings
+from django.utils.crypto import constant_time_compare, salted_hmac
 from django.core.cache import cache
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
@@ -73,10 +74,14 @@ def clear_login_attempts(mobile, context='generic'):
     cache.delete(login_attempt_limit_key(mobile, context))
 
 
+def _hash_otp_code(code):
+    return salted_hmac('kisan1.otp', str(code).strip()).hexdigest()
+
+
 def create_otp_session_payload():
     otp = f"{secrets.randbelow(9000) + 1000}"
     expires_at = (timezone.now() + timedelta(minutes=5)).isoformat()
-    return {'code': otp, 'expires_at': expires_at}
+    return otp, {'code_hash': _hash_otp_code(otp), 'expires_at': expires_at}
 
 
 def get_otp_remaining_seconds(payload):
@@ -105,8 +110,9 @@ def is_otp_expired(payload):
 def is_otp_valid(payload, provided_otp):
     if not payload or not provided_otp:
         return False
+    provided = str(provided_otp).strip()
     if isinstance(payload, str):
-        return payload == str(provided_otp).strip()
+        return constant_time_compare(payload, provided)
     expires_at = payload.get('expires_at')
     if not expires_at:
         return False
@@ -115,7 +121,11 @@ def is_otp_valid(payload, provided_otp):
         expires_at_dt = timezone.make_aware(expires_at_dt, timezone.get_current_timezone())
     if timezone.now() > expires_at_dt:
         return False
-    return payload.get('code') == str(provided_otp).strip()
+    code_hash = payload.get('code_hash')
+    if not code_hash:
+        legacy_code = payload.get('code')
+        return bool(legacy_code and constant_time_compare(str(legacy_code), provided))
+    return constant_time_compare(code_hash, _hash_otp_code(provided))
 
 
 
