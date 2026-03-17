@@ -890,3 +890,42 @@ def analytics_dashboard(request):
         'tools_demand': list(tools_demand),
         'role_activity': list(role_activity),
     })
+
+def pesticide_dashboard(request):
+
+    if request.method == 'POST':
+
+        # ✅ ADD PRODUCT
+        if 'add_product' in request.POST:
+            item_name = request.POST.get('item_name')
+            category = request.POST.get('category')
+            unit = request.POST.get('unit')
+            market_price = request.POST.get('market_price')
+            price = request.POST.get('price')
+            stock = request.POST.get('stock_quantity')
+
+            Inventory.objects.create(
+                user=request.user,
+                item_name=item_name,
+                category=category,
+                unit=unit,
+                market_price=market_price,
+                price=price,
+                stock_quantity=stock
+            )
+
+        # ✅ UPDATE PRICE
+        if 'update_product_price' in request.POST:
+            item_id = request.POST.get('item_id')
+            new_price = request.POST.get('new_price')
+
+            item = Inventory.objects.get(id=item_id, user=request.user)
+            item.price = new_price
+            item.save()
+
+    # GET DATA
+    inventory = Inventory.objects.filter(user=request.user)
+
+    return render(request, 'kisan1/dashboard_labor.html', {
+        'inventory': inventory
+    })

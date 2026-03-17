@@ -4,17 +4,21 @@
 <div class="dashboard-shell">
     <div class="dashboard-topbar">
         <a class="dash-back" href="{% url 'welcome' %}">← {% trans "Back" %}</a>
+
         <div class="dash-title">
             <span>{{ user.name|upper }}&#39;S {% trans "Dashboard" %}</span>
             <span>({% trans "Role" %}: {{ role|upper }})</span>
         </div>
+
         <div class="menu-container">
             <button class="dash-menu">{% trans "Menu" %}</button>
+
+            <!-- ✅ UPDATED MENU -->
             <div class="dropdown-content">
-                <a href="#service-settings" data-panel-target="service-settings">{% trans "Shop Settings" %}</a>
-                <a href="#inventory-panel" data-panel-target="inventory-panel">{% trans "Inventory" %}</a>
-                <a href="#inventory-panel" data-panel-target="inventory-panel">{% trans "Product Management" %}</a>
-                <a href="#orders-panel" data-panel-target="orders-panel">{% trans "Orders" %}</a>
+                <a href="#add-product" data-panel-target="add-product">Add Product</a>
+                <a href="#change-rate" data-panel-target="change-rate">Change Product Rate</a>
+                <a href="#view-products" data-panel-target="view-products">View Products</a>
+                <a href="#orders-panel" data-panel-target="orders-panel">Orders</a>
                 <a href="{% url 'logout' %}">{% trans "Logout" %}</a>
             </div>
         </div>
@@ -41,13 +45,14 @@
         <div class="profile-status">
             <div class="status-label">{% trans "Status" %}</div>
             {% if is_available and service_status == 'Active' %}
-                <div class="status-value">{% trans "Active Service" %}</div>
+            <div class="status-value">{% trans "Active Service" %}</div>
             {% else %}
-                <div class="status-value status-paused">{% trans "Paused" %}</div>
+            <div class="status-value status-paused">{% trans "Paused" %}</div>
             {% endif %}
         </div>
     </div>
 
+    <!-- ================= ORDERS ================= -->
     <div id="orders-panel" class="section-title">
         <span class="section-bar"></span>
         {% trans "Orders" %}
@@ -64,6 +69,7 @@
                 <span>{% trans "Order" %}: {{ req.items_ordered }}</span>
                 <span>{% trans "Total" %}: Rs {{ req.total_cost }}</span>
             </div>
+
             {% if req.status == 'Pending' %}
             <div class="request-actions">
                 <form action="{% url 'accept_shop_order' req.id %}" method="post">
@@ -79,139 +85,193 @@
         </div>
         {% empty %}
         <div class="empty-card">
-            <div class="empty-icon"></div>
             <p>{% trans "No active shop orders right now." %}</p>
-            <p class="empty-sub">{% trans "Available orders will appear here." %}</p>
         </div>
         {% endfor %}
     </div>
 
-    <div id="service-settings" class="settings-panel">
-        <h3>{% trans "Shop Settings" %}</h3>
-        <form method="post" class="settings-form" style="gap: 12px;">
+    <!-- ================= ADD PRODUCT ================= -->
+    <div id="add-product" class="settings-panel">
+        <h3>Add Product</h3>
+
+        <form method="post">
             {% csrf_token %}
-            <label for="priceItemSelect">{% trans "Select Product" %}</label>
-            <select id="priceItemSelect" name="item_id" required style="padding: 10px; border-radius: 10px; border: 1px solid #1f2937; background:#111827; color:#e5e7eb;">
+            <input type="hidden" name="add_product">
+
+            <label>Product Name</label>
+            <input type="text" name="item_name" required>
+
+            <label>Category</label>
+            <select name="category" required>
+                <option value="Seeds">Seeds</option>
+                <option value="Fertilizer">Fertilizer</option>
+                <option value="Pesticides">Pesticides</option>
+            </select>
+
+            <!-- ✅ NEW UNIT -->
+            <label>Unit</label>
+            <select name="unit" required>
+                <option value="kg">Kg</option>
+                <option value="litre">Litre</option>
+                <option value="bag">Bag</option>
+                <option value="packet">Packet</option>
+            </select>
+
+            <!-- ✅ REQUIRED FIELDS BACK -->
+            <label>Market Price</label>
+            <input type="number" name="market_price" required>
+
+            <label>Shop Price</label>
+            <input type="number" name="price" required>
+
+            <label>Stock Quantity</label>
+            <input type="number" name="stock_quantity" required>
+
+            <div class="settings-actions">
+                <button type="submit">Add Product</button>
+            </div>
+        </form>
+    </div>
+    <!-- ================= CHANGE RATE ================= -->
+    <div id="change-rate" class="settings-panel">
+        <h3>Change Product Rate</h3>
+
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="update_product_price">
+
+            <label>Select Product</label>
+            <select id="priceItemSelect" name="item_id" required>
                 {% for item in inventory %}
-                    <option value="{{ item.id }}" data-price="{{ item.price }}">{{ item.item_name }}</option>
-                {% empty %}
-                    <option value="" data-price="0">{% trans "No products available" %}</option>
+                <option value="{{ item.id }}" data-price="{{ item.price }}">
+                    {{ item.item_name }}
+                </option>
                 {% endfor %}
             </select>
-            <p id="currentRateText" style="margin:0; color:#cbd5e1; font-weight:600;">{% trans "Current Rate" %}: ₹<span id="currentRateValue">0</span></p>
-            <label for="newPriceInput">{% trans "New Price" %}</label>
-            <input id="newPriceInput" type="number" min="1" max="100000" name="new_price" required style="padding: 10px; border-radius: 10px; border: 1px solid #1f2937; background:#111827; color:#e5e7eb;">
+
+            <p>
+                Current Price: ₹<span id="currentRateValue">0</span>
+            </p>
+
+            <label>New Price</label>
+            <input type="number" name="new_price" required>
+
             <div class="settings-actions">
-                <button type="submit" name="update_product_price" style="background:#0f766e; color:#fff; border:none; border-radius:10px; padding:10px 14px;">{% trans "Save Settings" %}</button>
+                <button type="submit">Update Price</button>
             </div>
         </form>
     </div>
-
-    <div id="inventory-panel" class="inventory-panel">
-        <h3>{% trans "Inventory" %}</h3>
-        <form method="post" class="settings-form">
-            {% csrf_token %}
-            <label for="itemName">{% trans "Product Name" %}</label>
-            <input id="itemName" type="text" name="item_name" maxlength="150" required>
-            <label for="itemCategory">{% trans "Category" %}</label>
-            <select id="itemCategory" name="category" required>
-                <option value="Seeds">{% trans "Seeds" %}</option>
-                <option value="Fertilizer">{% trans "Fertilizer" %}</option>
-                <option value="Pesticides">{% trans "Pesticides" %}</option>
-            </select>
-            <label for="itemMarketPrice">{% trans "Market Price" %}</label>
-            <input id="itemMarketPrice" type="number" name="market_price" min="1" max="100000" required>
-            <label for="itemPrice">{% trans "Shop Price" %}</label>
-            <input id="itemPrice" type="number" name="price" min="1" max="100000" required>
-            <label for="itemStock">{% trans "Stock Quantity" %}</label>
-            <input id="itemStock" type="number" name="stock_quantity" min="1" max="100000" required>
-            <div class="settings-actions">
-                <button type="submit" name="add_product">{% trans "Save" %}</button>
-            </div>
-        </form>
+    <div id="view-products" class="settings-panel">
+        <h3>My Products</h3>
 
         {% if inventory %}
-            <div style="margin-top: 16px; overflow-x:auto;">
-                <table style="width:100%; border-collapse: collapse;">
-                    <thead>
-                        <tr>
-                            <th style="text-align:left; padding:8px;">{% trans "Product" %}</th>
-                            <th style="text-align:left; padding:8px;">{% trans "Category" %}</th>
-                            <th style="text-align:left; padding:8px;">{% trans "Market Price" %}</th>
-                            <th style="text-align:left; padding:8px;">{% trans "Shop Price" %}</th>
-                            <th style="text-align:left; padding:8px;">{% trans "Quantity" %}</th>
-                            <th style="text-align:left; padding:8px;">{% trans "Action" %}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in inventory %}
-                        <tr>
-                            <td style="padding:8px;">{{ item.item_name }}</td>
-                            <td style="padding:8px;">{{ item.category }}</td>
-                            <td style="padding:8px;">Rs {{ item.market_price }}</td>
-                            <td style="padding:8px;">
-                                <form method="post" style="display:flex; gap:8px; align-items:center;">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="item_id" value="{{ item.id }}">
-                                    <input type="number" name="shop_price" value="{{ item.price }}" min="1" max="100000" required style="width:110px;">
-                            </td>
-                            <td style="padding:8px;">{{ item.stock_quantity }}</td>
-                            <td style="padding:8px;">
-                                    <button type="submit" name="save_shop_price">{% trans "Save" %}</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <div style="margin-top:15px; display:flex; flex-direction:column; gap:15px;">
+
+            {% for item in inventory %}
+            <div style="
+            background:#ffffff;
+            border-radius:12px;
+            padding:16px;
+            border:1px solid #e5e7eb;
+        ">
+
+                <!-- TOP -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <div style="font-size:16px; font-weight:700; color:#111;">
+                        {{ item.item_name }}
+                    </div>
+
+                    <div style="
+                    background:#e6f4ea;
+                    color:#065f46;
+                    padding:4px 10px;
+                    border-radius:8px;
+                    font-size:12px;
+                ">
+                        {{ item.category }}
+                    </div>
+                </div>
+
+                <!-- DETAILS -->
+                <div style="
+                display:grid;
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap:10px;
+                font-size:13px;
+                color:#374151;
+            ">
+
+                    <div>
+                        <strong>Unit</strong><br>
+                        {{ item.unit }}
+                    </div>
+
+                    <div>
+                        <strong>Market Price</strong><br>
+                        ₹{{ item.market_price }}
+                    </div>
+
+                    <div>
+                        <strong>Shop Price</strong><br>
+                        ₹{{ item.price }}
+                    </div>
+
+                    <div>
+                        <strong>Stock</strong><br>
+                        {{ item.stock_quantity }}
+                    </div>
+
+                </div>
+
             </div>
+            {% endfor %}
+
+        </div>
         {% else %}
-            <p>{% trans "No stock added yet." %}</p>
+        <p>No products added yet.</p>
         {% endif %}
     </div>
-</div>
 
-<script>
-    (function () {
-        const filter = document.getElementById('bookingFilter');
-        const cards = Array.from(document.querySelectorAll('.request-card'));
-        if (filter) {
-            filter.addEventListener('change', function () {
-                const value = this.value;
-                cards.forEach((card) => {
-                    const status = (card.dataset.status || '').toLowerCase();
-                    if (!card.dataset.status) {
-                        return;
+    <script>
+        (function () {
+            const filter = document.getElementById('bookingFilter');
+            const cards = Array.from(document.querySelectorAll('.request-card'));
+
+            if (filter) {
+                filter.addEventListener('change', function () {
+                    const value = this.value;
+                    cards.forEach((card) => {
+                        const status = (card.dataset.status || '').toLowerCase();
+                        card.style.display = value === 'all' || status === value ? '' : 'none';
+                    });
+                });
+            }
+
+            document.querySelectorAll('[data-panel-target]').forEach((link) => {
+                link.addEventListener('click', (event) => {
+                    const targetId = event.currentTarget.getAttribute('data-panel-target');
+                    const panel = document.getElementById(targetId);
+                    if (panel) {
+                        event.preventDefault();
+                        panel.classList.toggle('is-open');
                     }
-                    card.style.display = value === 'all' || status === value ? '' : 'none';
                 });
             });
-        }
 
-        document.querySelectorAll('[data-panel-target]').forEach((link) => {
-            link.addEventListener('click', (event) => {
-                const targetId = event.currentTarget.getAttribute('data-panel-target');
-                const panel = document.getElementById(targetId);
-                if (panel) {
-                    event.preventDefault();
-                    panel.classList.toggle('is-open');
-                }
-            });
-        });
+            const productSelect = document.getElementById('priceItemSelect');
+            const currentRateValue = document.getElementById('currentRateValue');
 
-        const productSelect = document.getElementById('priceItemSelect');
-        const currentRateValue = document.getElementById('currentRateValue');
-        function syncCurrentRate() {
-            if (!productSelect || !currentRateValue) return;
-            const selectedOption = productSelect.options[productSelect.selectedIndex];
-            const oldPrice = selectedOption ? selectedOption.getAttribute('data-price') || '0' : '0';
-            currentRateValue.textContent = oldPrice;
-        }
-        if (productSelect) {
-            productSelect.addEventListener('change', syncCurrentRate);
-            syncCurrentRate();
-        }
-    })();
-</script>
-{% endblock %}
+            function syncCurrentRate() {
+                if (!productSelect || !currentRateValue) return;
+                const selectedOption = productSelect.options[productSelect.selectedIndex];
+                currentRateValue.textContent = selectedOption.getAttribute('data-price') || '0';
+            }
 
+            if (productSelect) {
+                productSelect.addEventListener('change', syncCurrentRate);
+                syncCurrentRate();
+            }
+        })();
+    </script>
+
+    {% endblock %}
