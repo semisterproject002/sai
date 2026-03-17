@@ -9,6 +9,8 @@ def get_villages_by_pincode(request):
     pincode = request.GET.get('pincode')
     if not pincode:
         return JsonResponse({'villages': []})
+    if is_hidden_pincode(pincode):
+        return JsonResponse({'villages': []})
 
     villages = list(
         PincodeMapping.objects.filter(pincode=pincode).values_list('village', flat=True).distinct()

@@ -4,7 +4,7 @@ from django.core.cache import cache
 from django.db import transaction
 
 from kisan1.models import PincodeMapping
-from kisan1.pincode_data import PINCODE_DATA
+from kisan1.pincode_data import PINCODE_DATA, is_hidden_pincode
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +17,8 @@ def load_telangana_pincodes(force=False):
     created_count = 0
     with transaction.atomic():
         for pincode, data in PINCODE_DATA.items():
+            if is_hidden_pincode(pincode):
+                continue
             district = data['district']
             mandal = data['mandal']
             for village in data['villages']:
@@ -32,6 +34,8 @@ def load_telangana_pincodes(force=False):
 
 
 def get_cached_location_details(pincode):
+    if is_hidden_pincode(pincode):
+        return None
     cache_key = f'location:pincode:{pincode}'
     cached = cache.get(cache_key)
     if cached is not None:

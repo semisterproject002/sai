@@ -1,4 +1,6 @@
 from django.contrib import admin
+from kisan1.pincode_data import HIDDEN_PINCODES
+
 from .models import (
     UserRegistration, 
     FarmerProfile, 
@@ -60,6 +62,10 @@ class PincodeMappingAdmin(admin.ModelAdmin):
     list_display = ('pincode', 'village', 'mandal', 'district', 'state')
     search_fields = ('pincode', 'village', 'mandal', 'district')
     list_filter = ('district', 'mandal')
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        return queryset.exclude(pincode__in=[str(value) for value in HIDDEN_PINCODES])
 
 admin.site.register(Order)
 admin.site.register(ShopOrder)

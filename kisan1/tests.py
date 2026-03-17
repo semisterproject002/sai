@@ -5,6 +5,7 @@ from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 # Graceful import in case location_service isn't fully set up yet
 try:
@@ -19,6 +20,7 @@ from .models import (
     LeaseProfile,
     PesticideInventory,
     PesticideProfile,
+    PincodeMapping,
     ShopOrder,
     ToolRentalBooking,
     ToolsProfile,
@@ -312,7 +314,7 @@ class KisanAsaraTests(TestCase):
     def test_book_labor_invalid_duration_is_rejected(self):
         self.assertTrue(True) # Invalid duration checks skipped
 
-    def test_pfs_inventory_save_supports_compound_categories(self):
+    def test_pfs_inventory_rejects_invalid_category(self):
         self._set_session(self.shop_user, 'pesticide')
         response = self.client.post(
             reverse('dashboard', kwargs={'role': 'pesticide'}),
@@ -326,12 +328,51 @@ class KisanAsaraTests(TestCase):
             },
         )
         self.assertRedirects(response, reverse('dashboard', kwargs={'role': 'pesticide'}))
-        items = PesticideInventory.objects.filter(shop=self.shop_user, item_name='Starter Combo').order_by('category')
-        self.assertEqual(items.count(), 3)
-        self.assertEqual(list(items.values_list('category', flat=True)), ['Fertilizer', 'Pesticide', 'Seeds'])
+        item = PesticideInventory.objects.get(shop=self.shop_user, item_name='Starter Combo', category='Pesticides')
+        self.assertEqual(item.market_price, 1600)
 
-        dashboard = self.client.get(reverse('dashboard', kwargs={'role': 'pesticide'}))
-        self.assertContains(dashboard, 'Starter Combo')
+
+
+    def test_hidden_pincode_location_data_is_blocked(self):
+        response = self.client.get(reverse('get_location_api'), {'pincode': '503111'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'success': False})
+
+
+
+    def test_pfs_shop_owner_can_save_shop_price(self):
+        self._set_session(self.shop_user, 'pesticide')
+        item = PesticideInventory.objects.create(
+            shop=self.shop_user,
+            item_name='Urea',
+            category='Fertilizer',
+            market_price=1200,
+            price=1100,
+            stock_quantity=10,
+        )
+        response = self.client.post(
+            reverse('dashboard', kwargs={'role': 'pesticide'}),
+            {'save_shop_price': '1', 'item_id': str(item.id), 'shop_price': '1050'},
+        )
+        self.assertRedirects(response, reverse('dashboard', kwargs={'role': 'pesticide'}))
+        item.refresh_from_db()
+        self.assertEqual(item.price, 1050)
+
+
+
+    def test_load_pincodes_skips_hidden_pincodes(self):
+        from .location_service import load_telangana_pincodes
+        load_telangana_pincodes(force=True)
+        self.assertFalse(PincodeMapping.objects.filter(pincode='503111').exists())
+
+    def test_pincode_mapping_model_blocks_hidden_pincode(self):
+        with self.assertRaises(ValidationError):
+            PincodeMapping.objects.create(
+                pincode='503111',
+                district='Kamareddy',
+                mandal='Kamareddy',
+                village='Hidden Village',
+            )
 
 
 

@@ -10,6 +10,9 @@ from kisan1.models import (
 )
 
 
+ALLOWED_SHOP_CATEGORIES = {'Seeds', 'Fertilizer', 'Pesticides'}
+
+
 mobile_validator = RegexValidator(
     regex=r'^[6-9][0-9]{9}$',
     message='Mobile number must be a valid 10-digit Indian mobile number.',
@@ -54,6 +57,12 @@ class ShopItemForm(forms.ModelForm):
             'price': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
             'stock_quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
         }
+
+    def clean_category(self):
+        value = (self.cleaned_data.get('category') or '').strip()
+        if value not in ALLOWED_SHOP_CATEGORIES:
+            raise ValidationError('Category must be one of: Seeds, Fertilizer, Pesticides.')
+        return value
 
     def clean_item_name(self):
         value = (self.cleaned_data.get('item_name') or '').strip()

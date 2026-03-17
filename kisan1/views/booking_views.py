@@ -47,11 +47,11 @@ def _exclude_hidden_pincode_queryset(queryset, *, pincode_field='user__pincode')
 
 
 _CATEGORY_ALIASES = {
-    'p&f': ['Pesticide', 'Fertilizer'],
-    'p&f&s': ['Pesticide', 'Fertilizer', 'Seeds'],
-    'products & fertilizers': ['Pesticide', 'Fertilizer'],
-    'products fertilizers': ['Pesticide', 'Fertilizer'],
-    'products & fertilizers & seeds': ['Pesticide', 'Fertilizer', 'Seeds'],
+    'p&f': ['Pesticides', 'Fertilizer'],
+    'p&f&s': ['Pesticides', 'Fertilizer', 'Seeds'],
+    'products & fertilizers': ['Pesticides', 'Fertilizer'],
+    'products fertilizers': ['Pesticides', 'Fertilizer'],
+    'products & fertilizers & seeds': ['Pesticides', 'Fertilizer', 'Seeds'],
 }
 
 
