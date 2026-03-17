@@ -33,8 +33,17 @@ from kisan1.services import (
     update_order_status,
 )
 from kisan1.views.shared import check_login, get_logged_in_user
+from kisan1.pincode_data import HIDDEN_PINCODES, is_hidden_pincode
 
 logger = logging.getLogger(__name__)
+
+
+
+_HIDDEN_PINCODE_STRINGS = [str(code) for code in HIDDEN_PINCODES]
+
+
+def _exclude_hidden_pincode_queryset(queryset, *, pincode_field='user__pincode'):
+    return queryset.exclude(**{f"{pincode_field}__in": _HIDDEN_PINCODE_STRINGS})
 
 
 _CATEGORY_ALIASES = {
@@ -104,11 +113,11 @@ def main_home(request):
 
     farmer = get_logged_in_user(request)
 
-    labors_qs = LaborProfile.objects.select_related('user').order_by('-id')
-    tractors_qs = TractorProfile.objects.select_related('user').order_by('-id')
-    tools_qs = ToolsProfile.objects.select_related('user').order_by('-id')
-    lands_qs = LeaseProfile.objects.select_related('user').order_by('-id')
-    pesticides_qs = PesticideProfile.objects.select_related('user').order_by('-id')
+    labors_qs = _exclude_hidden_pincode_queryset(LaborProfile.objects.select_related('user').order_by('-id'))
+    tractors_qs = _exclude_hidden_pincode_queryset(TractorProfile.objects.select_related('user').order_by('-id'))
+    tools_qs = _exclude_hidden_pincode_queryset(ToolsProfile.objects.select_related('user').order_by('-id'))
+    lands_qs = _exclude_hidden_pincode_queryset(LeaseProfile.objects.select_related('user').order_by('-id'))
+    pesticides_qs = _exclude_hidden_pincode_queryset(PesticideProfile.objects.select_related('user').order_by('-id'))
 
     if district:
         labors_qs = labors_qs.filter(user__district__icontains=district)
@@ -212,16 +221,17 @@ def dashboard(request, role):
         context['work_requests'] = LeaseLandRequest.objects.filter(land__user=user_profile).order_by('-created_at')
     elif role == 'pesticide':
         shop_profile = PesticideProfile.objects.filter(user=user_profile).first()
-        if request.method == 'POST' and 'add_product' in request.POST:
+        if request.method == 'POST':
             if not shop_profile:
                 messages.error(request, 'Complete P&F registration first to manage inventory.')
-            else:
+            elif 'add_product' in request.POST:
                 item_form = ShopItemForm(request.POST)
                 if not item_form.is_valid():
-                    messages.error(request, 'Please provide valid product, category, price, and stock quantity.')
+                    messages.error(request, 'Please provide valid product, category, market price, shop price, and stock quantity.')
                 else:
                     item_name = item_form.cleaned_data['item_name']
                     category = item_form.cleaned_data['category']
+                    market_price = item_form.cleaned_data['market_price']
                     price = item_form.cleaned_data['price']
                     stock_quantity = item_form.cleaned_data['stock_quantity']
                     normalized_categories = _expand_product_categories(category)
@@ -234,6 +244,7 @@ def dashboard(request, role):
                             item_name=item_name,
                             category=normalized_category,
                             defaults={
+                                'market_price': market_price,
                                 'price': price,
                                 'stock_quantity': stock_quantity,
                             },
@@ -244,6 +255,17 @@ def dashboard(request, role):
                     action = 'added' if created else 'updated'
                     messages.success(request, f"Product '{inventory_item.item_name}' {action} in inventory.")
                     return redirect('dashboard', role='pesticide')
+            elif 'save_shop_price' in request.POST:
+                item_id = request.POST.get('item_id')
+                shop_price = request.POST.get('shop_price')
+                try:
+                    item = PesticideInventory.objects.get(id=item_id, shop=user_profile)
+                    item.price = _parse_positive_int(shop_price, default=item.price)
+                    item.save(update_fields=['price'])
+                    messages.success(request, f"Updated shop price for '{item.item_name}'.")
+                except PesticideInventory.DoesNotExist:
+                    messages.error(request, 'Unable to update price for this product.')
+                return redirect('dashboard', role='pesticide')
 
         context['shop'] = shop_profile
         context['inventory'] = PesticideInventory.objects.filter(shop=user_profile).order_by('item_name')
@@ -503,7 +525,7 @@ def request_lease(request, land_id):
 @session_login_required
 @role_required('farmer')
 def book_shop(request, shop_id):
-    shop = get_object_or_404(PesticideProfile, id=shop_id)
+    shop = get_object_or_404(PesticideProfile.objects.exclude(user__pincode__in=_HIDDEN_PINCODE_STRINGS), id=shop_id)
     inventory_items = PesticideInventory.objects.filter(shop=shop.user)
 
     if request.method == 'POST':

@@ -53,3 +53,34 @@ PINCODE_DATA = {
             "50300": { "district": "Nizamabad", "mandal": "Nizamabad Rural", "villages": ["Nizamabad Rural", "Yedpalle", "Dichpally"] },
             "503002": { "district": "Nizamabad", "mandal": "Nizamabad South", "villages": ["Nizamabad Rural", "Malkapur", "Yellammakunta"] },
         }
+
+
+HIDDEN_PINCODES = [503111, 503123, 503102]
+
+
+def _normalize_pincode(value):
+    """Return integer pincode when possible, otherwise None."""
+    if value is None:
+        return None
+    text_value = str(value).strip()
+    if not text_value.isdigit():
+        return None
+    try:
+        return int(text_value)
+    except (TypeError, ValueError):
+        return None
+
+
+def is_hidden_pincode(pincode):
+    normalized = _normalize_pincode(pincode)
+    return normalized in HIDDEN_PINCODES
+
+
+def filter_by_pincode(data_list):
+    """Return only items whose pincode is not in the hidden pincode list."""
+    filtered_data = []
+    for row in data_list:
+        row_pincode = row.get('pincode') if isinstance(row, dict) else getattr(row, 'pincode', None)
+        if not is_hidden_pincode(row_pincode):
+            filtered_data.append(row)
+    return filtered_data

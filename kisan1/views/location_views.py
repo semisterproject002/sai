@@ -2,6 +2,7 @@ from django.http import JsonResponse
 
 from kisan1.location_service import get_cached_location_details, load_telangana_pincodes
 from kisan1.models import Location, PincodeMapping
+from kisan1.pincode_data import is_hidden_pincode
 
 
 def get_villages_by_pincode(request):
@@ -19,6 +20,8 @@ def get_location_api(request):
     pincode_input = request.GET.get('pincode', '')
 
     if pincode_input.isdigit() and 5 <= len(pincode_input) <= 6:
+        if is_hidden_pincode(pincode_input):
+            return JsonResponse({'success': False})
         # Load pincodes into DB if it is completely empty
         if not PincodeMapping.objects.exists():
             try:
