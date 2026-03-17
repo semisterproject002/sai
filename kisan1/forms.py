@@ -11,6 +11,13 @@ from kisan1.models import (
 
 
 ALLOWED_SHOP_CATEGORIES = {'Seeds', 'Fertilizer', 'Pesticides'}
+ALLOWED_SHOP_CATEGORY_ALIASES = {
+    'p&f',
+    'p&f&s',
+    'products & fertilizers',
+    'products fertilizers',
+    'products & fertilizers & seeds',
+}
 
 
 mobile_validator = RegexValidator(
@@ -60,8 +67,11 @@ class ShopItemForm(forms.ModelForm):
 
     def clean_category(self):
         value = (self.cleaned_data.get('category') or '').strip()
-        if value not in ALLOWED_SHOP_CATEGORIES:
-            raise ValidationError('Category must be one of: Seeds, Fertilizer, Pesticides.')
+        normalized = value.lower()
+        if value not in ALLOWED_SHOP_CATEGORIES and normalized not in ALLOWED_SHOP_CATEGORY_ALIASES:
+            raise ValidationError(
+                'Category must be one of: Seeds, Fertilizer, Pesticides, P&F, or P&F&S.'
+            )
         return value
 
     def clean_item_name(self):
