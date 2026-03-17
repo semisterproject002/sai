@@ -2,6 +2,8 @@ from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
 
+from kisan1.pincode_data import is_hidden_pincode
+
 class UserRegistration(models.Model):
     ROLE_CHOICES = (
         ('farmer', 'Farmer'),
@@ -120,10 +122,13 @@ class PesticideInventory(models.Model):
     shop = models.ForeignKey(UserRegistration, on_delete=models.CASCADE, related_name='inventory')
     item_name = models.CharField(max_length=150)
     category = models.CharField(max_length=50)
+    market_price = models.PositiveIntegerField(default=1)
     price = models.PositiveIntegerField()
     stock_quantity = models.PositiveIntegerField()
 
     def clean(self):
+        if self.market_price is None or self.market_price <= 0:
+            raise ValidationError({'market_price': 'Market price must be greater than 0.'})
         if self.price is None or self.price <= 0:
             raise ValidationError({'price': 'Price must be greater than 0.'})
         if self.stock_quantity is None or self.stock_quantity <= 0:
@@ -229,6 +234,17 @@ class PincodeMapping(models.Model):
     district = models.CharField(max_length=100)
     mandal = models.CharField(max_length=100)
     village = models.CharField(max_length=100)
+
+    def clean(self):
+        normalized = (self.pincode or '').strip()
+        if not normalized.isdigit() or not (5 <= len(normalized) <= 6):
+            raise ValidationError({'pincode': 'Pincode must be a 5 or 6 digit number.'})
+        if is_hidden_pincode(normalized):
+            raise ValidationError({'pincode': 'This pincode is restricted and cannot be stored.'})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.pincode} - {self.village}"
