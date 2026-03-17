@@ -7,6 +7,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.core.paginator import Paginator
 from kisan1.forms import LaborBookingRequestForm, ServiceSettingsForm, ShopItemForm, TractorBookingRequestForm
+from kisan1.models import Inventory
 
 from kisan1.models import (
     BookingStatus,
