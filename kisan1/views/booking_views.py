@@ -234,16 +234,22 @@ def dashboard(request, role):
                     market_price = item_form.cleaned_data['market_price']
                     price = item_form.cleaned_data['price']
                     stock_quantity = item_form.cleaned_data['stock_quantity']
-                    inventory_item, created = PesticideInventory.objects.update_or_create(
-                        shop=user_profile,
-                        item_name=item_name,
-                        category=category,
-                        defaults={
-                            'market_price': market_price,
-                            'price': price,
-                            'stock_quantity': stock_quantity,
-                        },
-                    )
+                    normalized_categories = _expand_product_categories(category)
+
+                    inventory_item = None
+                    created = False
+                    for normalized_category in normalized_categories:
+                        inventory_item, item_created = PesticideInventory.objects.update_or_create(
+                            shop=user_profile,
+                            item_name=item_name,
+                            category=normalized_category,
+                            defaults={
+                                'market_price': market_price,
+                                'price': price,
+                                'stock_quantity': stock_quantity,
+                            },
+                        )
+                        created = created or item_created
 
                     _sync_shop_available_products(shop_profile)
                     action = 'added' if created else 'updated'
