@@ -14,7 +14,6 @@
                 <a href="#service-settings" data-panel-target="service-settings">{% trans "Shop Settings" %}</a>
                 <a href="#inventory-panel" data-panel-target="inventory-panel">{% trans "Inventory" %}</a>
                 <a href="#inventory-panel" data-panel-target="inventory-panel">{% trans "Product Management" %}</a>
-                <a href="#inventory-panel" data-panel-target="inventory-panel">{% trans "Stock Control" %}</a>
                 <a href="#orders-panel" data-panel-target="orders-panel">{% trans "Orders" %}</a>
                 <a href="{% url 'logout' %}">{% trans "Logout" %}</a>
             </div>
@@ -89,19 +88,21 @@
 
     <div id="service-settings" class="settings-panel">
         <h3>{% trans "Shop Settings" %}</h3>
-        <p>{% trans "Current Rate" %}: Rs {{ current_rate }}</p>
-        <form method="post" action="{% url 'update_service_settings' role %}" class="settings-form">
+        <form method="post" class="settings-form" style="gap: 12px;">
             {% csrf_token %}
-            <label for="serviceRate">{% trans "Change Rate" %}</label>
-            <input id="serviceRate" type="number" min="0" max="100000" name="rate" value="{{ current_rate }}" required>
-            <label><input type="checkbox" name="is_available" {% if is_available %}checked{% endif %}> {% trans "Update Availability" %}</label>
-            <label for="serviceStatus">{% trans "Service Status" %}</label>
-            <select id="serviceStatus" name="service_status">
-                <option value="Active" {% if service_status == 'Active' %}selected{% endif %}>{% trans "Active" %}</option>
-                <option value="Paused" {% if service_status == 'Paused' %}selected{% endif %}>{% trans "Paused" %}</option>
+            <label for="priceItemSelect">{% trans "Select Product" %}</label>
+            <select id="priceItemSelect" name="item_id" required style="padding: 10px; border-radius: 10px; border: 1px solid #1f2937; background:#111827; color:#e5e7eb;">
+                {% for item in inventory %}
+                    <option value="{{ item.id }}" data-price="{{ item.price }}">{{ item.item_name }}</option>
+                {% empty %}
+                    <option value="" data-price="0">{% trans "No products available" %}</option>
+                {% endfor %}
             </select>
+            <p id="currentRateText" style="margin:0; color:#cbd5e1; font-weight:600;">{% trans "Current Rate" %}: ₹<span id="currentRateValue">0</span></p>
+            <label for="newPriceInput">{% trans "New Price" %}</label>
+            <input id="newPriceInput" type="number" min="1" max="100000" name="new_price" required style="padding: 10px; border-radius: 10px; border: 1px solid #1f2937; background:#111827; color:#e5e7eb;">
             <div class="settings-actions">
-                <button type="submit">{% trans "Save Settings" %}</button>
+                <button type="submit" name="update_product_price" style="background:#0f766e; color:#fff; border:none; border-radius:10px; padding:10px 14px;">{% trans "Save Settings" %}</button>
             </div>
         </form>
     </div>
@@ -113,8 +114,14 @@
             <label for="itemName">{% trans "Product Name" %}</label>
             <input id="itemName" type="text" name="item_name" maxlength="150" required>
             <label for="itemCategory">{% trans "Category" %}</label>
-            <input id="itemCategory" type="text" name="category" maxlength="50" required>
-            <label for="itemPrice">{% trans "Price" %}</label>
+            <select id="itemCategory" name="category" required>
+                <option value="Seeds">{% trans "Seeds" %}</option>
+                <option value="Fertilizer">{% trans "Fertilizer" %}</option>
+                <option value="Pesticides">{% trans "Pesticides" %}</option>
+            </select>
+            <label for="itemMarketPrice">{% trans "Market Price" %}</label>
+            <input id="itemMarketPrice" type="number" name="market_price" min="1" max="100000" required>
+            <label for="itemPrice">{% trans "Shop Price" %}</label>
             <input id="itemPrice" type="number" name="price" min="1" max="100000" required>
             <label for="itemStock">{% trans "Stock Quantity" %}</label>
             <input id="itemStock" type="number" name="stock_quantity" min="1" max="100000" required>
@@ -124,19 +131,39 @@
         </form>
 
         {% if inventory %}
-            <div class="request-grid" style="margin-top: 16px;">
-                {% for item in inventory %}
-                <div class="request-card">
-                    <div class="request-header">
-                        <div class="request-name">{{ item.item_name }}</div>
-                        <span class="status-pill confirmed">{% trans "In Stock" %}</span>
-                    </div>
-                    <div class="request-meta">
-                        <span>{% trans "Price" %}: Rs {{ item.price }}</span>
-                        <span>{% trans "Quantity" %}: {{ item.stock_quantity }}</span>
-                    </div>
-                </div>
-                {% endfor %}
+            <div style="margin-top: 16px; overflow-x:auto;">
+                <table style="width:100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left; padding:8px;">{% trans "Product" %}</th>
+                            <th style="text-align:left; padding:8px;">{% trans "Category" %}</th>
+                            <th style="text-align:left; padding:8px;">{% trans "Market Price" %}</th>
+                            <th style="text-align:left; padding:8px;">{% trans "Shop Price" %}</th>
+                            <th style="text-align:left; padding:8px;">{% trans "Quantity" %}</th>
+                            <th style="text-align:left; padding:8px;">{% trans "Action" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in inventory %}
+                        <tr>
+                            <td style="padding:8px;">{{ item.item_name }}</td>
+                            <td style="padding:8px;">{{ item.category }}</td>
+                            <td style="padding:8px;">Rs {{ item.market_price }}</td>
+                            <td style="padding:8px;">
+                                <form method="post" style="display:flex; gap:8px; align-items:center;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="item_id" value="{{ item.id }}">
+                                    <input type="number" name="new_price" value="{{ item.price }}" min="1" max="100000" required style="width:110px;">
+                            </td>
+                            <td style="padding:8px;">{{ item.stock_quantity }}</td>
+                            <td style="padding:8px;">
+                                    <button type="submit" name="update_product_price">{% trans "Save" %}</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         {% else %}
             <p>{% trans "No stock added yet." %}</p>
@@ -171,6 +198,19 @@
                 }
             });
         });
+
+        const productSelect = document.getElementById('priceItemSelect');
+        const currentRateValue = document.getElementById('currentRateValue');
+        function syncCurrentRate() {
+            if (!productSelect || !currentRateValue) return;
+            const selectedOption = productSelect.options[productSelect.selectedIndex];
+            const oldPrice = selectedOption ? selectedOption.getAttribute('data-price') || '0' : '0';
+            currentRateValue.textContent = oldPrice;
+        }
+        if (productSelect) {
+            productSelect.addEventListener('change', syncCurrentRate);
+            syncCurrentRate();
+        }
     })();
 </script>
 {% endblock %}

@@ -10,6 +10,9 @@ from kisan1.models import (
 )
 
 
+ALLOWED_SHOP_CATEGORIES = {'Seeds', 'Fertilizer', 'Pesticides'}
+
+
 mobile_validator = RegexValidator(
     regex=r'^[6-9][0-9]{9}$',
     message='Mobile number must be a valid 10-digit Indian mobile number.',
@@ -46,18 +49,31 @@ class PesticideForm(forms.ModelForm):
 class ShopItemForm(forms.ModelForm):
     class Meta:
         model = PesticideInventory
-        fields = ['item_name', 'category', 'price', 'stock_quantity']
+        fields = ['item_name', 'category', 'market_price', 'price', 'stock_quantity']
         widgets = {
             'item_name': forms.TextInput(attrs={'class': 'form-control'}),
             'category': forms.TextInput(attrs={'class': 'form-control'}),
+            'market_price': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
             'price': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
             'stock_quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
         }
+
+    def clean_category(self):
+        value = (self.cleaned_data.get('category') or '').strip()
+        if value not in ALLOWED_SHOP_CATEGORIES:
+            raise ValidationError('Category must be one of: Seeds, Fertilizer, Pesticides.')
+        return value
 
     def clean_item_name(self):
         value = (self.cleaned_data.get('item_name') or '').strip()
         if len(value) < 2:
             raise forms.ValidationError('Item name must be at least 2 characters.')
+        return value
+
+    def clean_market_price(self):
+        value = self.cleaned_data.get('market_price')
+        if value is None or value <= 0:
+            raise ValidationError('Market price must be greater than 0.')
         return value
 
     def clean_price(self):
