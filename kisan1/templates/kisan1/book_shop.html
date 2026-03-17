@@ -1,5 +1,6 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Shop Booking | Kisan Asara</title>
@@ -23,7 +24,9 @@
             --shadow: 0 10px 30px rgba(26, 115, 232, 0.08);
         }
 
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
         body {
             margin: 0;
@@ -132,12 +135,23 @@
             padding: 14px 6px;
         }
 
-        .stat:not(:last-child) { border-right: 1px solid var(--border); }
+        .stat:not(:last-child) {
+            border-right: 1px solid var(--border);
+        }
 
-        .stat strong { display: block; font-size: 15px; }
-        .stat span { color: var(--muted); font-size: 12px; }
+        .stat strong {
+            display: block;
+            font-size: 15px;
+        }
 
-        .section { padding: 16px 18px 8px; }
+        .stat span {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .section {
+            padding: 16px 18px 8px;
+        }
 
         .section h2 {
             margin: 0 0 12px;
@@ -254,7 +268,9 @@
             cursor: pointer;
         }
 
-        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
 
         .btn-link {
             margin-top: 10px;
@@ -284,19 +300,66 @@
         }
 
         @media (max-width: 600px) {
-            .stats { grid-template-columns: repeat(2, 1fr); }
-            .stat:nth-child(odd) { border-right: 1px solid var(--border); }
-            .stat:nth-child(-n+2) { border-bottom: 1px solid var(--border); }
-            .stock-item { flex-direction: column; }
-            .qty-wrap { width: 100%; text-align: left; }
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .stat:nth-child(odd) {
+                border-right: 1px solid var(--border);
+            }
+
+            .stat:nth-child(-n+2) {
+                border-bottom: 1px solid var(--border);
+            }
+
+            .stock-item {
+                flex-direction: column;
+            }
+
+            .qty-wrap {
+                width: 100%;
+                text-align: left;
+            }
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 9999;
+
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+
+            padding: 10px 16px;
+            border-radius: 10px;
+
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: #ffffff;
+            color: #042409;
+            transform: translateY(-2px);
         }
     </style>
 </head>
+
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">Back</button>
+    <button onclick="window.history.back()" class="back-btn"
+        style="position:fixed;top:16px;left:16px;z-index:9999;">Back</button>
     <div class="phone-shell">
         <div class="top-bar">
-            <a href="javascript:history.back()" class="icon-btn" aria-label="Go back"><i class="fas fa-arrow-left"></i></a>
+            <a href="javascript:history.back()" class="icon-btn" aria-label="Go back"><i
+                    class="fas fa-arrow-left"></i></a>
             <strong>Shop Details</strong>
         </div>
 
@@ -321,9 +384,9 @@
         </div>
 
         {% if messages %}
-            {% for message in messages %}
-                <div class="alert"><i class="fas fa-circle-exclamation"></i> {{ message }}</div>
-            {% endfor %}
+        {% for message in messages %}
+        <div class="alert"><i class="fas fa-circle-exclamation"></i> {{ message }}</div>
+        {% endfor %}
         {% endif %}
 
         <div class="section">
@@ -343,22 +406,15 @@
                     <div class="stock-item">
                         <div>
                             <h3>{{ item.item_name }}</h3>
-                            <div class="availability"><i class="fas fa-circle-check"></i> {{ item.stock_quantity }} units available</div>
+                            <div class="availability"><i class="fas fa-circle-check"></i> {{ item.stock_quantity }}
+                                units available</div>
                             <div class="price">Rs. {{ item.price }} / unit</div>
                         </div>
                         <div class="qty-wrap">
                             <label for="qty_{{ item.id }}" class="qty-label">Quantity</label>
-                            <input
-                                type="number"
-                                name="qty_{{ item.id }}"
-                                id="qty_{{ item.id }}"
-                                class="qty-input"
-                                min="0"
-                                max="{{ item.stock_quantity }}"
-                                placeholder="0"
-                                data-price="{{ item.price }}"
-                                oninput="calculateTotal()"
-                            >
+                            <input type="number" name="qty_{{ item.id }}" id="qty_{{ item.id }}" class="qty-input"
+                                min="0" max="{{ item.stock_quantity }}" placeholder="0" data-price="{{ item.price }}"
+                                oninput="calculateTotal()">
                         </div>
                     </div>
                     {% empty %}
@@ -372,7 +428,8 @@
 
             <div class="summary">
                 <div class="row"><span>Selected units</span><strong id="itemCount">0</strong></div>
-                <div class="total"><span>Estimated total</span><span>Rs. <span id="displayTotal">0.00</span></span></div>
+                <div class="total"><span>Estimated total</span><span>Rs. <span id="displayTotal">0.00</span></span>
+                </div>
                 <button type="submit" class="btn-primary"><i class="fas fa-cart-plus"></i> Continue to cart</button>
                 <a href="javascript:history.back()" class="btn-link">Cancel</a>
             </div>
@@ -400,7 +457,5 @@
         }
     </script>
 </body>
+
 </html>
-
-
-

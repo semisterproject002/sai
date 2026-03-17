@@ -175,19 +175,53 @@
             font-size: 14px;
             font-weight: 700;
         }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 9999;
+
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+
+            padding: 10px 16px;
+            border-radius: 10px;
+
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: #ffffff;
+            color: #042409;
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">Back</button>
+    <button onclick="window.history.back()" class="back-btn"
+        style="position:fixed;top:16px;left:16px;z-index:9999;">Back</button>
     <div class="booking-card">
         <div class="provider-info">
             <h3>{{ tractor.user.name }}</h3>
             <p><i class="fas fa-map-pin"></i> {% trans "Location:" %} <span>{{ tractor.user.village }}</span></p>
             <p><i class="fas fa-phone"></i> {% trans "Mobile:" %} <span>{{ tractor.user.mobile }}</span></p>
             <p><i class="fas fa-gear"></i> {% trans "Services:" %} <span>{{ tractor.services }}</span></p>
-            <p><i class="fas fa-coins"></i> {% trans "Rate:" %} <span>Rs. {{ tractor.wage_amount }} / {% trans "Hour" %}</span></p>
+            <p><i class="fas fa-coins"></i> {% trans "Rate:" %}
+
+                <span>Rs. {{ tractor.wage_amount }} / {% trans "Hour" %}</span>
+            </p>
         </div>
+
 
         <form method="POST">
             {% csrf_token %}
@@ -207,7 +241,10 @@
                     <input type="time" name="start_time" id="start_time" min="05:00" max="18:00" required>
                 </div>
             </div>
-            <p style="color: #f57c00; font-size: 11px; margin-top: -10px; font-weight: 600;">* {% trans "Available: 05:00 AM to 06:00 PM" %}</p>
+            <p style="color: #f57c00; font-size: 11px; margin-top: -10px; font-weight: 600;">
+
+                * {% trans "Available: 05:00 AM to 06:00 PM" %}</p>
+
 
             <div class="form-group">
                 <label>{% trans "Field Address" %}</label>
@@ -239,5 +276,3 @@
 </body>
 
 </html>
-
-

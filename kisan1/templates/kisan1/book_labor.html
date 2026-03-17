@@ -234,17 +234,52 @@
             color: var(--dark-green);
             transform: translateX(-3px);
         }
+
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 9999;
+
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+
+            padding: 10px 16px;
+            border-radius: 10px;
+
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: #ffffff;
+            color: #042409;
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">Back</button>
+    <button onclick="window.history.back()" class="back-btn"
+        style="position:fixed;top:16px;left:16px;z-index:9999;">Back</button>
     <div class="booking-card">
         <div class="provider-info">
             <h3>{{ laborer.user.name }}</h3>
             <p><i class="fas fa-map-marker-alt"></i> {% trans "Location:" %} <span>{{ laborer.user.village }}</span></p>
             <p><i class="fas fa-screwdriver-wrench"></i> {% trans "Skills:" %} <span>{{ laborer.skills }}</span></p>
-            <p><i class="fas fa-wallet"></i> {% trans "Wages:" %} <span>Rs. {{ laborer.wage_amount }} / {{ laborer.wage_type }}</span></p>
+            <p><i class="fas fa-wallet"></i> {% trans "Wages:" %}
+
+                <span>Rs. {{ laborer.wage_amount }} / {{ laborer.wage_type }}</span>
+            </p>
+
         </div>
 
         <form method="POST">
@@ -335,5 +370,3 @@
 </body>
 
 </html>
-
-

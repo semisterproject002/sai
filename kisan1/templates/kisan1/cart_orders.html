@@ -412,11 +412,41 @@
         .timeline-item.pending .timeline-content {
             opacity: 0.5;
         }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 9999;
+
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+
+            padding: 10px 16px;
+            border-radius: 10px;
+
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: #ffffff;
+            color: #042409;
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">Back</button>
+    <button onclick="window.history.back()" class="back-btn"
+        style="position:fixed;top:16px;left:16px;z-index:9999;">Back</button>
     <div class="sidebar">
         <div class="brand">Kisan Asara</div>
         <a href="{% url 'main_home' %}" class="nav-item"><i class="fas fa-home"></i> Home</a>
@@ -435,10 +465,11 @@
 
             <div class="tab-container">
                 <div class="tabs">
-                    <button class="tab-btn {% if cart_data %}active{% endif %}" onclick="switchTab('cart')">Current
-                        Cart</button>
-                    <button class="tab-btn {% if not cart_data %}active{% endif %}" onclick="switchTab('tracking')">My
-                        Orders & Tracking</button>
+                    <button class="tab-btn {% if cart_data %}active{% endif %}" onclick="switchTab('cart')">
+                        Current Cart</button>
+
+                    <button class="tab-btn {% if not cart_data %}active{% endif %}" onclick="switchTab('tracking')">
+                        My Orders & Tracking</button>
                 </div>
             </div>
 
@@ -466,8 +497,8 @@
                         </ul>
                         <div
                             style="margin-top: 20px; font-size: 24px; font-weight: 700; color: var(--primary-color); text-align: right; background: var(--light-primary); padding: 15px; border-radius: 10px;">
-                            <span style="font-size: 14px; color: var(--text-muted); font-weight: 500;">Total
-                                Amount:</span> Rs. {{ cart_data.total_cost }}
+                            <span style="font-size: 14px; color: var(--text-muted); font-weight: 500;">
+                                Total Amount:</span> Rs. {{ cart_data.total_cost }}
                         </div>
                         {% else %}
                         <div style="text-align: center; color: var(--text-muted); padding: 40px;">
@@ -530,11 +561,12 @@
                     <div class="order-header">
                         <div>
                             <span class="order-id">ORD-{{ order.id|stringformat:"04d" }}</span>
-                            <span class="order-meta"><i class="far fa-calendar-alt"></i> {{ order.created_at|date:"d M
-                                Y, h:i A" }} - {{ order.items_ordered }}</span><br>
+                            <span class="order-meta"><i class="far fa-calendar-alt"></i>
+                                {{ order.created_at|date:"d M Y, h:i A" }} - {{ order.items_ordered }}</span><br>
                             <span class="order-meta"><i class="fas fa-map-marker-alt"
-                                    style="color: var(--primary-color);"></i> {{ farmer.village }}, {{ farmer.district
-                                }}</span>
+                                    style="color: var(--primary-color);"></i>
+                                {{ farmer.village }}, {{ farmer.district }}
+                            </span>
                         </div>
                         <div style="text-align: right;">
                             {% if order.status == 'Confirmed' %}
@@ -639,6 +671,3 @@
 </body>
 
 </html>
-
-
-

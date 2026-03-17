@@ -3,11 +3,17 @@
 {% block content %}
 <div class="dashboard-shell">
     <div class="dashboard-topbar">
-        <button class="dash-back" onclick="window.location.href='{% url 'welcome' %}'">{% trans "Back" %}</button>
+
+        <!-- ✅ FIXED BACK BUTTON -->
+        <a href="{% url 'welcome' %}" class="dash-back">
+            {% trans "Back" %}
+        </a>
+
         <div class="dash-title">
             <span>{{ user.name|upper }}&#39;S {% trans "Dashboard" %}</span>
             <span>({% trans "Role" %}: {{ role|upper }})</span>
         </div>
+
         <div class="menu-container">
             <button class="dash-menu">{% trans "Menu" %}</button>
             <div class="dropdown-content">
@@ -38,9 +44,9 @@
         <div class="profile-status">
             <div class="status-label">{% trans "Status" %}</div>
             {% if is_available and service_status == 'Active' %}
-                <div class="status-value">{% trans "Active Service" %}</div>
+            <div class="status-value">{% trans "Active Service" %}</div>
             {% else %}
-                <div class="status-value status-paused">{% trans "Paused" %}</div>
+            <div class="status-value status-paused">{% trans "Paused" %}</div>
             {% endif %}
         </div>
     </div>
@@ -62,6 +68,7 @@
                 <span>{% trans "Date" %}: {{ req.booking_date }}</span>
                 <span>{% trans "Duration" %}: {{ req.duration }}</span>
             </div>
+
             {% if req.status == 'Pending' %}
             <div class="request-actions">
                 <form action="{% url 'accept_labor_booking' req.id %}" method="post">
@@ -87,16 +94,26 @@
     <div id="service-settings" class="settings-panel">
         <h3>{% trans "Service Settings" %}</h3>
         <p>{% trans "Current Rate" %}: Rs {{ current_rate }}/day</p>
+
         <form method="post" action="{% url 'update_service_settings' role %}" class="settings-form">
             {% csrf_token %}
+
             <label for="serviceRate">{% trans "Change Rate" %}</label>
             <input id="serviceRate" type="number" min="0" max="100000" name="rate" value="{{ current_rate }}" required>
-            <label><input type="checkbox" name="is_available" {% if is_available %}checked{% endif %}> {% trans "Update Availability" %}</label>
+
+            <label>
+                <input type="checkbox" name="is_available" {% if is_available %}checked{% endif %}>
+                {% trans "Update Availability" %}
+            </label>
+
             <label for="serviceStatus">{% trans "Service Status" %}</label>
             <select id="serviceStatus" name="service_status">
-                <option value="Active" {% if service_status == 'Active' %}selected{% endif %}>{% trans "Active" %}</option>
-                <option value="Paused" {% if service_status == 'Paused' %}selected{% endif %}>{% trans "Paused" %}</option>
+                <option value="Active" {% if service_status=='Active' %}selected{% endif %}>{% trans "Active" %}
+                </option>
+                <option value="Paused" {% if service_status=='Paused' %}selected{% endif %}>{% trans "Paused" %}
+                </option>
             </select>
+
             <div class="settings-actions">
                 <button type="submit">{% trans "Save Settings" %}</button>
             </div>
@@ -108,6 +125,7 @@
     (function () {
         const filter = document.getElementById('bookingFilter');
         const cards = Array.from(document.querySelectorAll('.request-card'));
+
         if (filter) {
             filter.addEventListener('change', function () {
                 const value = this.value;
@@ -122,6 +140,7 @@
             link.addEventListener('click', (event) => {
                 const targetId = event.currentTarget.getAttribute('data-panel-target');
                 const panel = document.getElementById(targetId);
+
                 if (panel) {
                     event.preventDefault();
                     panel.classList.toggle('is-open');
@@ -130,5 +149,5 @@
         });
     })();
 </script>
-{% endblock %}
 
+{% endblock %}

@@ -185,14 +185,40 @@
             transform: scale(0.98) translateY(0);
             box-shadow: 0 4px 10px rgba(17, 138, 40, 0.2);
         }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 9999;
+
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+
+            padding: 10px 16px;
+            border-radius: 10px;
+
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: #ffffff;
+            color: #042409;
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">
-        {% trans "Back" %}</button>
-
-
+    <a href="{% url 'welcome' %}" class="back-btn">Back</a>
     <div class="reg-card">
         <h2>{% trans "Farmer Registration" %}</h2>
         <p>{% trans "Join Kisan Asara and grow your farming future" %}</p>
