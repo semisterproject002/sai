@@ -7,6 +7,8 @@ from django.urls import reverse
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 
+from kisan1.views.shared import create_otp_session_payload
+
 # Graceful import in case location_service isn't fully set up yet
 try:
     from .location_service import load_telangana_pincodes
@@ -83,7 +85,8 @@ class KisanAsaraTests(TestCase):
     def test_language_toggle_redirects_back(self):
         response = self.client.post(reverse('set_language'), {'language': 'te', 'next': reverse('login')})
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('login'))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('login'))
 
     def test_registration_pages_load(self):
         routes = [
@@ -175,7 +178,21 @@ class KisanAsaraTests(TestCase):
         self.assertEqual(ShopOrder.objects.filter(farmer=self.farmer, shop=self.shop_profile).count(), 1)
 
     def test_self_booking_is_blocked(self):
-        self.assertTrue(True) # Feature stubbed for future update
+        same_mobile_labor = UserRegistration.objects.create(
+            name='Self Labor',
+            mobile=self.farmer.mobile,
+            role='labor',
+            is_verified=True,
+        )
+        same_mobile_profile = LaborProfile.objects.create(user=same_mobile_labor, wage_amount=400, wage_type='Per Day')
+
+        self._set_session(self.farmer, 'farmer')
+        response = self.client.post(
+            reverse('book_labor', args=[same_mobile_profile.id]),
+            {'duration': '1', 'booking_date': '2026-03-21', 'start_time': '10:00', 'location': 'Self field'},
+        )
+        self.assertRedirects(response, reverse('main_home'))
+        self.assertEqual(LaborBooking.objects.filter(farmer=self.farmer, laborer=same_mobile_profile).count(), 0)
 
     def test_provider_accept_updates_status_and_inventory(self):
         self._set_session(self.farmer, 'farmer')
@@ -193,10 +210,23 @@ class KisanAsaraTests(TestCase):
         self.assertEqual(self.inventory.stock_quantity, 18)
 
     def test_location_api_returns_data(self):
-        self.assertTrue(True) # API endpoint disabled for testing
+        PincodeMapping.objects.create(
+            pincode='503001',
+            district='Nizamabad',
+            mandal='Armoor',
+            village='Perkit',
+        )
+        response = self.client.get(reverse('get_location_api'), {'pincode': '503001'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json().get('success'), True)
+        self.assertIn('Perkit', response.json().get('villages', []))
 
     def test_admin_analytics_page_for_staff(self):
-        self.assertTrue(True) # Admin dashboard disabled for testing
+        User = get_user_model()
+        admin_user = User.objects.create_user(username='admin', email='admin@example.com', password='StrongPass!123', is_staff=True)
+        self.client.force_login(admin_user)
+        response = self.client.get(reverse('admin_analytics'))
+        self.assertEqual(response.status_code, 200)
 
     def test_provider_reject_and_farmer_cancel_flows(self):
         # Create labor booking
@@ -215,18 +245,27 @@ class KisanAsaraTests(TestCase):
 
     def test_auth_otp_login_flow(self):
         session = self.client.session
-        session['login_otp'] = '1234'
+        otp_code, otp_payload = create_otp_session_payload()
+        session['login_otp'] = otp_payload
         session['mobile'] = self.farmer.mobile
         session['role'] = 'farmer'
         session.save()
 
-        response = self.client.post(reverse('verify_otp_login'), {'otp': '1234'})
+        response = self.client.post(reverse('verify_otp_login'), {'otp': otp_code})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('main_home'))
         self.assertTrue(self.client.session.get('otp_verified'))
 
     def test_location_village_endpoint(self):
-        self.assertTrue(True) # Location API skipped for fast testing
+        PincodeMapping.objects.create(
+            pincode='503002',
+            district='Nizamabad',
+            mandal='Armoor',
+            village='VillageOne',
+        )
+        response = self.client.get(reverse('get_villages'), {'pincode': '503002'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'villages': ['VillageOne']})
 
     def test_main_home_loads(self):
         self._set_session(self.farmer, 'farmer')
@@ -276,10 +315,25 @@ class KisanAsaraTests(TestCase):
                 self.assertRedirects(response, reverse('verify_otp'))
 
     def test_reject_and_cancel_flow_updates_status(self):
-        self.assertTrue(True) # Merged with above tests
+        self._set_session(self.farmer, 'farmer')
+        self.client.post(
+            reverse('book_labor', args=[self.labor_profile.id]),
+            {'duration': '1', 'booking_date': '2026-03-24', 'start_time': '09:00', 'location': 'Plot 88'},
+        )
+        booking = LaborBooking.objects.get(farmer=self.farmer, laborer=self.labor_profile)
+        response = self.client.post(reverse('cancel_booking', kwargs={'type': 'labor', 'id': booking.id}))
+        self.assertEqual(response.status_code, 302)
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, 'Cancelled')
 
     def test_role_guard_blocks_wrong_provider_actions(self):
-        self.assertTrue(True) # Role guard stubbed
+        self._set_session(self.labor_user, 'labor')
+        response = self.client.post(
+            reverse('book_labor', args=[self.labor_profile.id]),
+            {'duration': '1', 'booking_date': '2026-03-20', 'start_time': '08:00', 'location': 'Plot 10'},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('login'))
 
     def test_user_created_successfully(self):
         user = UserRegistration.objects.get(mobile="9999999999")
@@ -309,10 +363,23 @@ class KisanAsaraTests(TestCase):
         self.assertEqual(ShopOrder.objects.filter(farmer=farmer, shop=shop_profile).count(), 1)
 
     def test_login_otp_rate_limit_blocks_spam(self):
-        self.assertTrue(True) # Rate limit logic skipped
+        cache.clear()
+        payload = {'mobile': self.farmer.mobile, 'role': 'farmer'}
+        for _ in range(5):
+            response = self.client.post(reverse('login'), payload)
+            self.assertEqual(response.status_code, 302)
+        blocked = self.client.post(reverse('login'), payload)
+        self.assertEqual(blocked.status_code, 200)
+        self.assertContains(blocked, 'Too many OTP requests')
         
     def test_book_labor_invalid_duration_is_rejected(self):
-        self.assertTrue(True) # Invalid duration checks skipped
+        self._set_session(self.farmer, 'farmer')
+        response = self.client.post(
+            reverse('book_labor', args=[self.labor_profile.id]),
+            {'duration': '0', 'booking_date': '2026-03-10', 'start_time': '10:00', 'location': 'Farm Plot 12'},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(LaborBooking.objects.filter(farmer=self.farmer, laborer=self.labor_profile).count(), 0)
 
     def test_pfs_inventory_rejects_invalid_category(self):
         self._set_session(self.shop_user, 'pesticide')

@@ -14,6 +14,7 @@ from kisan1.models import (
     PesticideProfile,
     ToolsProfile,
     TractorProfile,
+    UserIdentity,
     UserRegistration,
 )
 from kisan1.views.shared import (
@@ -312,16 +313,16 @@ def handle_registration(request, role, template_name):
         request.session.pop('login_otp_attempts', None)
 
         # 4-digit OTP
-        otp_payload = create_otp_session_payload()
+        otp_code, otp_payload = create_otp_session_payload()
         request.session['reg_otp'] = otp_payload
         _set_otp_back_target(request, 'otp_back_url')
 
-        announce_otp(mobile, otp_payload['code'], context='registration')
+        announce_otp(mobile, otp_code, context='registration')
 
         if is_debug_mode():
-            logger.info('REGISTRATION OTP for %s is %s', mobile, otp_payload['code'])
+            logger.info('REGISTRATION OTP for %s is %s', mobile, otp_code)
 
-        send_real_otp_sms(mobile, otp_payload['code'])
+        send_real_otp_sms(mobile, otp_code)
         return redirect('verify_otp')
 
     return render(request, template_name)
@@ -388,15 +389,19 @@ def verify_otp(request):
             core = request.session.get('reg_core')
             prof = request.session.get('reg_profile')
 
+            identity, _ = UserIdentity.objects.get_or_create(mobile=core['mobile'])
+            defaults = dict(core)
+            defaults['identity'] = identity
             user, created = UserRegistration.objects.get_or_create(
                 mobile=core['mobile'],
                 role=core['role'],
-                defaults=core,
+                defaults=defaults,
             )
 
             if not created:
                 for key, value in core.items():
                     setattr(user, key, value)
+                user.identity = identity
 
             location_obj, _ = Location.objects.get_or_create(
                 pincode=core.get('pincode') or '',
@@ -486,16 +491,16 @@ def login_view(request):
         request.session.pop('login_otp_attempts', None)
 
         # 4-digit OTP
-        otp_payload = create_otp_session_payload()
+        otp_code, otp_payload = create_otp_session_payload()
         request.session['login_otp'] = otp_payload
         request.session['mobile'] = mobile
         request.session['role'] = role
         _set_otp_back_target(request, 'login_otp_back_url')
 
-        announce_otp(mobile, otp_payload['code'], context='login')
+        announce_otp(mobile, otp_code, context='login')
         if is_debug_mode():
-            logger.info('LOGIN OTP for %s is %s', mobile, otp_payload['code'])
-        send_real_otp_sms(mobile, otp_payload['code'])
+            logger.info('LOGIN OTP for %s is %s', mobile, otp_code)
+        send_real_otp_sms(mobile, otp_code)
         return redirect('verify_otp_login')
 
     return render(request, 'kisan1/login.html')
@@ -539,6 +544,10 @@ def otp_view(request):
             role = request.session.get('role')
 
             user = get_object_or_404(UserRegistration, mobile=mobile, role=role)
+            if user.identity_id is None and mobile:
+                identity, _ = UserIdentity.objects.get_or_create(mobile=mobile)
+                user.identity = identity
+                user.save(update_fields=['identity'])
 
             request.session['user_id'] = user.id
             request.session['name'] = user.name

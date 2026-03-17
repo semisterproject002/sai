@@ -104,11 +104,23 @@ class LaborBookingRequestForm(forms.ModelForm):
         model = LaborBooking
         fields = ['booking_date', 'start_time', 'duration', 'location']
 
+    def clean_duration(self):
+        value = self.cleaned_data.get('duration')
+        if value is None or value <= 0:
+            raise ValidationError('Duration must be greater than 0.')
+        return value
+
 
 class TractorBookingRequestForm(forms.ModelForm):
     class Meta:
         model = TractorBooking
         fields = ['booking_date', 'start_time', 'duration_hours', 'location']
+
+    def clean_duration_hours(self):
+        value = self.cleaned_data.get('duration_hours')
+        if value is None or value <= 0:
+            raise ValidationError('Duration hours must be greater than 0.')
+        return value
 
 
 class ServiceSettingsForm(forms.Form):

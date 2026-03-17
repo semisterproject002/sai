@@ -1,8 +1,25 @@
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 
 from kisan1.pincode_data import is_hidden_pincode
+
+
+MOBILE_VALIDATOR = RegexValidator(
+    regex=r'^[6-9][0-9]{9}$',
+    message='Mobile number must be a valid 10-digit Indian mobile number.',
+)
+
+
+class UserIdentity(models.Model):
+    mobile = models.CharField(max_length=10, unique=True, validators=[MOBILE_VALIDATOR])
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.mobile
+
+
 
 class UserRegistration(models.Model):
     ROLE_CHOICES = (
@@ -16,7 +33,8 @@ class UserRegistration(models.Model):
     
     name = models.CharField(max_length=100)
     # 🔥 1. REMOVED unique=True from mobile
-    mobile = models.CharField(max_length=10) 
+    identity = models.ForeignKey('UserIdentity', null=True, blank=True, on_delete=models.CASCADE, related_name='roles')
+    mobile = models.CharField(max_length=10, validators=[MOBILE_VALIDATOR]) 
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     age = models.PositiveIntegerField(null=True, blank=True)
 
