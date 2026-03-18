@@ -1,50 +1,51 @@
 from django.http import JsonResponse
-
-from kisan1.location_service import get_cached_location_details, load_telangana_pincodes
-from kisan1.models import Location, PincodeMapping
+from kisan1.models import PincodeMapping
 from kisan1.pincode_data import is_hidden_pincode
-
 
 def get_villages_by_pincode(request):
     pincode = request.GET.get('pincode')
-    if not pincode:
-        return JsonResponse({'villages': []})
-    if is_hidden_pincode(pincode):
+    
+    # 1. Security Check
+    if not pincode or is_hidden_pincode(pincode):
         return JsonResponse({'villages': []})
 
-    villages = list(
-        PincodeMapping.objects.filter(pincode=pincode).values_list('village', flat=True).distinct()
-    )
-    return JsonResponse({'villages': villages})
+    try:
+        # 2. Grab from Database
+        mapping = PincodeMapping.objects.get(pincode=pincode)
+        
+        # 3. Convert the comma-separated string back into a clean list
+        villages_list = [v.strip() for v in mapping.village.split(',')] if mapping.village else []
+        return JsonResponse({'villages': villages_list})
+        
+    except PincodeMapping.DoesNotExist:
+        return JsonResponse({'villages': []})
 
 
 def get_location_api(request):
     pincode_input = request.GET.get('pincode', '')
 
-    if pincode_input.isdigit() and 5 <= len(pincode_input) <= 6:
+    # 1. Validate Input
+    if len(pincode_input) == 6 and pincode_input.isdigit():
+        
+        # 2. Security Check
         if is_hidden_pincode(pincode_input):
-            return JsonResponse({'success': False})
-        # Load pincodes into DB if it is completely empty
-        if not PincodeMapping.objects.exists():
-            try:
-                load_telangana_pincodes(force=False)
-            except Exception:
-                return JsonResponse({'success': False, 'error': 'Location data unavailable'}, status=503)
+            return JsonResponse({'success': False, 'error': 'Restricted Pincode'})
+        
+        # 3. Grab the FIRST matching record from Database (This fixes the crash!)
+        location = PincodeMapping.objects.filter(pincode=pincode_input).first()
+        
+        if location:
+            # Convert the comma-separated string back into a list
+            villages_list = [v.strip() for v in location.village.split(',')] if location.village else []
 
-        location_data = get_cached_location_details(pincode_input)
-        if location_data:
-            for village in location_data.get('villages', []):
-                Location.objects.get_or_create(
-                    pincode=pincode_input,
-                    district=location_data['district'],
-                    mandal=location_data['mandal'],
-                    village=village,
-                )
+            # 4. Send exactly what the frontend needs
             return JsonResponse({
                 'success': True,
-                'district': location_data['district'],
-                'mandal': location_data['mandal'],
-                'villages': location_data['villages'],
+                'district': location.district,
+                'mandal': location.mandal,
+                'villages': villages_list,
             })
+        else:
+            return JsonResponse({'success': False, 'error': 'Pincode not found'})
 
-    return JsonResponse({'success': False})
+    return JsonResponse({'success': False, 'error': 'Invalid Pincode'})

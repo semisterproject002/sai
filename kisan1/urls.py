@@ -58,5 +58,6 @@ urlpatterns = [
     path('order-success/', views.order_success_view, name='order_success'),
     path('get-villages/', views.get_villages_by_pincode, name='get_villages'),
     path('get-location/', views.get_location_api, name='get_location_api'),
+    path('get-location/', views.get_location_api, name='get_location'), # or however you had it mapped!
     path('admin-analytics/', views.analytics_dashboard, name='admin_analytics'),
 ]

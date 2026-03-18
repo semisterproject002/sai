@@ -52,6 +52,10 @@ PINCODE_DATA = {
             "502316": { "district": "Sangareddy", "mandal": "Patancheru", "villages": ["Patancheru", "Ameenpur", "Rudraram"] },
             "503001": { "district": "Nizamabad", "mandal": "Nizamabad Rural", "villages": ["Nizamabad Rural", "Yedpalle", "Dichpally"] },
             "503002": { "district": "Nizamabad", "mandal": "Nizamabad South", "villages": ["Nizamabad Rural", "Malkapur", "Yellammakunta"] },
+            "503202": { "district": "Nizamabad", "mandal": "Yedapally", "villages": ["Thanekalan", "Bapu Nagar", "Mallepahad","Dharmaram"] },
+            "503307": { "district": "Nizamabad", "mandal": "velpoor", "villages": ["pachala Nadukuda", "Bhimgal", "Pipri"] },
+            "503309": { "district": "Kamareddy", "mandal": "Dongli", "villages": ["Mogha", "Madnoor", "Hangarga"] },
+            "503145": { "district": "Kamareddy", "mandal": "Sadasivanagar", "villages": ["Kalwaral ", "Padmajiwadi", "Markal"] },
         }
 
 
