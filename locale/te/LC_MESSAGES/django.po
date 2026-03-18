@@ -1084,11 +1084,11 @@ msgstr "ఆర్డర్ నిర్ధారించబడింది!"
 #: .\kisan1\templates\kisan1\order_success.html:142
 msgid ""
 "\n"
-"            Your fertilizer and pesticide order has been successfully "
+"            Your fertilizer and pesticide order has been successfully "
 "placed. \n"
-"            Our representative will contact you within <strong>24 hours</"
+"            Our representative will contact you within <strong>24 hours</"
 "strong> to confirm delivery.\n"
-"            "
+"            "
 msgstr "మీ ఎరువులు మరియు పురుగుమందుల ఆర్డర్ విజయవంతంగా తీసుకోబడింది. డెలివరీని నిర్ధారించడానికి మా ప్రతినిధి 24 గంటల్లో మిమ్మల్ని సంప్రదిస్తారు."
 
 #: .\kisan1\templates\kisan1\order_success.html:149
@@ -1438,3 +1438,31 @@ msgstr "లాగిన్"
 #: .\kisan1\templates\kisan1\welcome.html:215
 msgid "SMART FARMING • SECURE FUTURE"
 msgstr "స్మార్ట్ ఫార్మింగ్ • సురక్షిత భవిష్యత్తు"
+
+#: .\kisan1\templates\kisan1\pfs_dashboard.html:101
+msgid "Filter Orders:"
+msgstr "ఆర్డర్లను ఫిల్టర్ చేయండి:"
+
+#: .\kisan1\templates\kisan1\pfs_dashboard.html:102
+msgid "All Requests"
+msgstr "అన్ని అభ్యర్థనలు"
+
+#: .\kisan1\templates\kisan1\pfs_dashboard.html:103
+msgid "Orders"
+msgstr "ఆర్డర్లు"
+
+#: .\kisan1\templates\kisan1\pfs_dashboard.html:104
+msgid "No active shop orders right now."
+msgstr "ప్రస్తుతం యాక్టివ్ షాప్ ఆర్డర్లు లేవు."
+
+#: .\kisan1\templates\kisan1\pfs_dashboard.html:105
+msgid "Add Product"
+msgstr "ఉత్పత్తిని జోడించండి"
+
+#: .\kisan1\templates\kisan1\pfs_dashboard.html:106
+msgid "Back"
+msgstr "వెనుకకు"
+
+#: .\kisan1\templates\kisan1\pfs_dashboard.html:107
+msgid "Menu"
+msgstr "మెనూ"
