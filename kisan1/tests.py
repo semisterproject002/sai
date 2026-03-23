@@ -1,4 +1,5 @@
 from datetime import timedelta
+from pathlib import Path
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
@@ -136,6 +137,28 @@ class KisanAsaraTests(TestCase):
         self._set_session(self.farmer, 'farmer')
         self.assertEqual(self.client.get(reverse('farmer_booking')).status_code, 200)
         self.assertEqual(self.client.get(reverse('cart')).status_code, 200)
+
+    def test_farmer_booking_renders_shop_tracking_dialog(self):
+        ShopOrder.objects.create(
+            farmer=self.farmer,
+            shop=self.shop_profile,
+            items_ordered='Urea (2 units @ Rs. 100)',
+            total_cost=200,
+            status='Confirmed',
+        )
+
+        self._set_session(self.farmer, 'farmer')
+        response = self.client.get(reverse('farmer_booking'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Track Order')
+        self.assertContains(response, 'trackingDialogBackdrop')
+        self.assertContains(response, 'data-track-kind="shop"')
+        self.assertContains(response, 'google.com/maps/dir/')
+
+    def test_farmer_booking_template_has_no_alert_calls(self):
+        template_path = Path(__file__).resolve().parent / 'templates' / 'kisan1' / 'farmer_booking.html'
+        self.assertNotIn('alert(', template_path.read_text(encoding='utf-8'))
 
     def test_book_labor_creates_booking_and_order(self):
         self._set_session(self.farmer, 'farmer')

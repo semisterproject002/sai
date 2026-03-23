@@ -304,7 +304,7 @@ def farmer_booking(request):
     tractor_bookings = TractorBooking.objects.select_related('tractor_owner__user').filter(farmer=farmer).order_by('-created_at')
     tool_bookings = ToolRentalBooking.objects.select_related('tool_shop__user').filter(farmer=farmer).order_by('-created_at')
     lease_requests = LeaseLandRequest.objects.select_related('land__user').filter(farmer=farmer).order_by('-created_at')
-    shop_orders = ShopOrder.objects.select_related('shop__user').filter(farmer=farmer).order_by('-created_at')
+    shop_orders = ShopOrder.objects.select_related('shop__user', 'farmer').filter(farmer=farmer).order_by('-created_at')
 
     context = {
         'labor_bookings': labor_bookings,
@@ -313,6 +313,7 @@ def farmer_booking(request):
         'lease_requests': lease_requests,
         'shop_orders': shop_orders,
         'has_bookings': bool(labor_bookings or tractor_bookings or tool_bookings or lease_requests or shop_orders),
+        'show_language_selector': False,
     }
     return render(request, 'kisan1/farmer_booking.html', context)
 
