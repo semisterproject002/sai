@@ -1,7 +1,7 @@
 ﻿{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ LANGUAGE_CODE|default:'en' }}">
 
 <head>
     <meta charset="UTF-8">
@@ -249,11 +249,12 @@
 </head>
 
 <body>
-    <a href="{% url 'register_choice' %}" class="back-btn">Back</a>
+    <a href="{% url 'register_choice' %}" class="back-btn">{% trans "Back" %}</a>
 
     <div class="reg-card">
         <h2>{% trans "Tool Shop Register" %}</h2>
         <p>{% trans "List your farming tools and equipment for rent" %}</p>
+        {% include 'kisan1/partials/form_messages.html' %}
 
         <form method="POST">
             {% csrf_token %}

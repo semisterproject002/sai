@@ -1,7 +1,7 @@
 ﻿{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ LANGUAGE_CODE|default:'en' }}">
 
 <head>
     <meta charset="UTF-8">
@@ -239,11 +239,12 @@
 </head>
 
 <body>
-    <a href="{% url 'register_choice' %}" class="back-btn">Back</a>
+    <a href="{% url 'register_choice' %}" class="back-btn">{% trans "Back" %}</a>
 
     <div class="reg-card">
         <h2>{% trans "Lease Land Registration" %}</h2>
         <p>{% trans "List your property and find the best farmers" %}</p>
+        {% include 'kisan1/partials/form_messages.html' %}
 
         <form method="POST">
             {% csrf_token %}
@@ -351,7 +352,7 @@
                 <input type="text" name="passbook" placeholder="{% trans 'e.g., T12345678901' %}"
                     pattern="[A-Z][0-9]{11}" minlength="12" maxlength="12" inputmode="text" autocomplete="off"
                     style="text-transform: uppercase;"
-                    title="Passbook must start with 1 Capital Letter followed by exactly 11 numbers."
+                    title="{% trans 'Passbook must start with 1 capital letter followed by exactly 11 numbers.' %}"
                     oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);" required>
                 <small style="color: #666; font-size: 11px; margin-top: 4px; display: block;">* {% trans "Strictly 12
                     characters: 1 Capital alphabet & remaining 11 Numbers" %}</small>

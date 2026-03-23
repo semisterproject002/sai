@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.models import Group
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.translation import gettext as _
 
 from kisan1.models import (
     FarmerProfile,
@@ -40,6 +41,17 @@ LEASE_PASSBOOK_RE = re.compile(r'^[A-Z][0-9]{11}$')
 TRACTOR_LICENSE_RE = re.compile(r'^[A-Z]{2}[0-9]{13}$')
 PFS_LICENSE_RE = re.compile(r'^[A-Z0-9\-]{8,20}$')
 OTP_ATTEMPT_LIMIT = getattr(settings, 'OTP_ATTEMPT_LIMIT', 5)
+MINIMUM_WORKING_AGE = 18
+MAX_REGISTRATION_AGE = 100
+EXPERIENCE_FIELD_LABELS = {
+    'experience': _('Total experience'),
+    'since_years': _('Business experience'),
+    'exp_Ploughing': _('Ploughing experience'),
+    'exp_Harrowing': _('Harrowing experience'),
+    'exp_Transport': _('Transport experience'),
+    'exp_Harvesting': _('Harvesting experience'),
+    'exp_Sowing': _('Sowing experience'),
+}
 
 
 def _assign_group_for_role(role):
@@ -74,6 +86,13 @@ def _is_positive_int(value, min_value=1, max_value=None):
     return True
 
 
+def _parse_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def _validate_common_registration_fields(request, template_name, *, name, mobile):
     age_raw = (request.POST.get('age') or '').strip()
     pincode = (request.POST.get('pincode') or '').strip()
@@ -83,13 +102,42 @@ def _validate_common_registration_fields(request, template_name, *, name, mobile
     village = (request.POST.get('village') or '').strip()
 
     if not name or not mobile or not age_raw or not pincode or not state or not district or not mandal or not village:
-        messages.error(request, "Please fill in all required fields before continuing.")
+        messages.error(request, _("Please fill in all required fields before continuing."))
         return render(request, template_name)
 
-    if not _is_positive_int(age_raw, min_value=18, max_value=100):
-        messages.error(request, "Age must be between 18 and 100.")
+    if not _is_positive_int(age_raw, min_value=MINIMUM_WORKING_AGE, max_value=MAX_REGISTRATION_AGE):
+        messages.error(
+            request,
+            _("Age must be between %(minimum_age)s and %(maximum_age)s.") % {
+                'minimum_age': MINIMUM_WORKING_AGE,
+                'maximum_age': MAX_REGISTRATION_AGE,
+            },
+        )
         return render(request, template_name)
 
+    return None
+
+
+def _validate_experience_years(request, template_name):
+    age = _parse_int((request.POST.get('age') or '').strip())
+    if age is None:
+        return render(request, template_name)
+
+    max_experience = max(0, age - MINIMUM_WORKING_AGE)
+    for field_name, label in EXPERIENCE_FIELD_LABELS.items():
+        raw_value = (request.POST.get(field_name) or '').strip()
+        if not raw_value:
+            continue
+        if not _is_positive_int(raw_value, min_value=0, max_value=max_experience):
+            messages.error(
+                request,
+                _("%(field)s must be less than or equal to %(limit)s years because minimum working age is %(minimum_age)s.") % {
+                    'field': label,
+                    'limit': max_experience,
+                    'minimum_age': MINIMUM_WORKING_AGE,
+                },
+            )
+            return render(request, template_name)
     return None
 
 
@@ -110,15 +158,15 @@ def handle_registration(request, role, template_name):
         mobile = request.POST.get('mobile', '').strip()
 
         if not name or not mobile:
-            messages.error(request, "All fields are required!")
+            messages.error(request, _("All fields are required!"))
             return render(request, template_name)
 
         if not is_valid_name(name):
-            messages.error(request, "Name should contain only letters and spaces (min 3 chars).")
+            messages.error(request, _("Name should contain only letters and spaces (minimum 3 characters)."))
             return render(request, template_name)
 
         if not is_valid_mobile(mobile):
-            messages.error(request, "Enter a valid 10-digit mobile number.")
+            messages.error(request, _("Enter a valid 10-digit mobile number."))
             return render(request, template_name)
 
         invalid_common_response = _validate_common_registration_fields(
@@ -129,10 +177,15 @@ def handle_registration(request, role, template_name):
         )
         if invalid_common_response:
             return invalid_common_response
+        invalid_experience_response = _validate_experience_years(request, template_name)
+        if invalid_experience_response:
+            return invalid_experience_response
+
+        age = _parse_int((request.POST.get('age') or '').strip())
 
         core_data = {
             'name': name,
-            'age': request.POST.get('age') or None,
+            'age': age,
             'mobile': mobile,
             'role': role,
             'pincode': request.POST.get('pincode'),
@@ -149,7 +202,7 @@ def handle_registration(request, role, template_name):
             gender = (request.POST.get('gender') or '').strip()
             passbook = (request.POST.get('passbook') or '').strip()
             if not gender or not passbook or not PASSBOOK_RE.fullmatch(passbook):
-                messages.error(request, "Enter a valid farmer passbook number (T + 11 digits).")
+                messages.error(request, _("Enter a valid farmer passbook number (T followed by 11 digits)."))
                 return render(request, template_name)
             profile_data = {
                 'gender': gender,
@@ -157,19 +210,18 @@ def handle_registration(request, role, template_name):
             }
         elif role == 'tractor':
             selected_services = request.POST.getlist('services')
-            # NEW: Stop if no services selected
             if not selected_services:
-                messages.error(request, "Please select at least one service.")
+                messages.error(request, _("Please select at least one service."))
                 return render(request, template_name)
                 
             services_list = []
             for service in selected_services:
-                exp = request.POST.get(f'exp_{service}')
-                wage = request.POST.get(f'wage_{service}')
-                if exp and wage:
-                    services_list.append(f"{service} ({exp} Yrs @ Rs. {wage}/hr)")
-                else:
-                    services_list.append(service)
+                exp = (request.POST.get(f'exp_{service}') or '').strip()
+                wage = (request.POST.get(f'wage_{service}') or '').strip()
+                if not exp or not wage:
+                    messages.error(request, _("Please provide both experience and hourly rate for every selected tractor service."))
+                    return render(request, template_name)
+                services_list.append(f"{service} ({exp} Yrs @ Rs. {wage}/hr)")
 
             driving_license = (request.POST.get('driving_license') or '').strip()
             base_wage = (request.POST.get('base_wage') or '').strip()
@@ -180,7 +232,7 @@ def handle_registration(request, role, template_name):
                 or not _is_positive_int(base_wage, min_value=1)
                 or not _is_positive_int(experience, min_value=0, max_value=100)
             ):
-                messages.error(request, "Please provide valid tractor registration details.")
+                messages.error(request, _("Please provide valid tractor registration details."))
                 return render(request, template_name)
 
             profile_data = {
@@ -192,24 +244,23 @@ def handle_registration(request, role, template_name):
             }
         elif role == 'labor':
             selected_skills = request.POST.getlist('skills')
-            # NEW: Stop if no skills selected
             if not selected_skills:
-                messages.error(request, "Please select at least one skill.")
+                messages.error(request, _("Please select at least one skill."))
                 return render(request, template_name)
                 
             skills_with_exp = []
             for skill in selected_skills:
-                exp = request.POST.get(f'exp_{skill}')
-                if exp:
-                    skills_with_exp.append(f"{skill} ({exp} Yrs)")
-                else:
-                    skills_with_exp.append(skill)
+                exp = (request.POST.get(f'exp_{skill}') or '').strip()
+                if not exp:
+                    messages.error(request, _("Please provide experience for every selected skill."))
+                    return render(request, template_name)
+                skills_with_exp.append(f"{skill} ({exp} Yrs)")
 
             gender = (request.POST.get('gender') or '').strip()
             wage_amount = (request.POST.get('wage_amount') or '').strip()
             wage_type = (request.POST.get('wage_type') or '').strip()
             if not gender or not wage_type or not _is_positive_int(wage_amount, min_value=1):
-                messages.error(request, "Please provide valid labor registration details.")
+                messages.error(request, _("Please provide valid labor registration details."))
                 return render(request, template_name)
 
             profile_data = {
@@ -220,9 +271,8 @@ def handle_registration(request, role, template_name):
             }
         elif role == 'lease':
             selected_soils = request.POST.getlist('soils')
-            # NEW: Stop if no soils selected
             if not selected_soils:
-                messages.error(request, "Please select at least one soil type.")
+                messages.error(request, _("Please select at least one soil type."))
                 return render(request, template_name)
                 
             soil_details_list = []
@@ -242,7 +292,7 @@ def handle_registration(request, role, template_name):
             except (TypeError, ValueError):
                 land_value = 0
             if land_value <= 0 or not water_resource or not passbook or not LEASE_PASSBOOK_RE.fullmatch(passbook.upper()):
-                messages.error(request, "Please provide valid lease registration details.")
+                messages.error(request, _("Please provide valid lease registration details."))
                 return render(request, template_name)
 
             profile_data = {
@@ -254,9 +304,8 @@ def handle_registration(request, role, template_name):
             }
         elif role == 'tools':
             selected_tools = request.POST.getlist('tools')
-            # NEW: Stop if no tools selected
             if not selected_tools:
-                messages.error(request, "Please select at least one tool.")
+                messages.error(request, _("Please select at least one tool."))
                 return render(request, template_name)
                 
             tools_with_cost = []
@@ -269,7 +318,7 @@ def handle_registration(request, role, template_name):
 
             shop_name = (request.POST.get('shop_name') or '').strip()
             if not shop_name:
-                messages.error(request, "Shop name is required for tools registration.")
+                messages.error(request, _("Shop name is required for tools registration."))
                 return render(request, template_name)
 
             profile_data = {
@@ -279,9 +328,8 @@ def handle_registration(request, role, template_name):
             }
         elif role == 'pesticide':
             selected_products = request.POST.getlist('products')
-            # NEW: Stop if no products selected
             if not selected_products:
-                messages.error(request, "Please select at least one product.")
+                messages.error(request, _("Please select at least one product."))
                 return render(request, template_name)
                 
             shop_name = (request.POST.get('shop_name') or '').strip()
@@ -293,7 +341,7 @@ def handle_registration(request, role, template_name):
                 or not PFS_LICENSE_RE.fullmatch(license_id.upper())
                 or not _is_positive_int(since_years, min_value=0, max_value=100)
             ):
-                messages.error(request, "Please provide valid fertilizer shop registration details.")
+                messages.error(request, _("Please provide valid fertilizer shop registration details."))
                 return render(request, template_name)
 
             profile_data = {
@@ -307,7 +355,7 @@ def handle_registration(request, role, template_name):
         request.session['reg_profile'] = profile_data
 
         if not can_send_otp(mobile, context='registration'):
-            messages.error(request, 'Too many OTP requests. Please wait a few minutes and try again.')
+            messages.error(request, _('Too many OTP requests. Please wait a few minutes and try again.'))
             return render(request, template_name)
 
         request.session.pop('login_otp_attempts', None)
@@ -361,7 +409,7 @@ def verify_otp(request):
     if is_otp_expired(otp_payload):
         request.session.pop('reg_otp', None)
         request.session.pop('reg_otp_attempts', None)
-        messages.error(request, 'OTP has expired. Please register again to generate a new OTP.', extra_tags='otp')
+        messages.error(request, _('OTP has expired. Please register again to generate a new OTP.'), extra_tags='otp')
         return render(request, 'kisan1/otp_verification.html', {
             'otp_attempts_left': OTP_ATTEMPT_LIMIT,
             'otp_remaining_seconds': 0,
@@ -371,14 +419,14 @@ def verify_otp(request):
     if attempts >= OTP_ATTEMPT_LIMIT:
         request.session.pop('reg_otp', None)
         request.session.pop('reg_otp_attempts', None)
-        messages.error(request, 'Too many invalid OTP attempts. Please register again to generate a new OTP.', extra_tags='otp')
+        messages.error(request, _('Too many invalid OTP attempts. Please register again to generate a new OTP.'), extra_tags='otp')
         return redirect('register_choice')
 
     if request.method == 'POST':
         if is_otp_expired(otp_payload):
             request.session.pop('reg_otp', None)
             request.session.pop('reg_otp_attempts', None)
-            messages.error(request, 'OTP has expired. Please register again to generate a new OTP.', extra_tags='otp')
+            messages.error(request, _('OTP has expired. Please register again to generate a new OTP.'), extra_tags='otp')
             return render(request, 'kisan1/otp_verification.html', {
                 'otp_attempts_left': OTP_ATTEMPT_LIMIT,
                 'otp_remaining_seconds': 0,
@@ -389,7 +437,7 @@ def verify_otp(request):
             core = request.session.get('reg_core')
             prof = request.session.get('reg_profile')
 
-            identity, _ = UserIdentity.objects.get_or_create(mobile=core['mobile'])
+            identity, identity_created = UserIdentity.objects.get_or_create(mobile=core['mobile'])
             defaults = dict(core)
             defaults['identity'] = identity
             user, created = UserRegistration.objects.get_or_create(
@@ -403,7 +451,7 @@ def verify_otp(request):
                     setattr(user, key, value)
                 user.identity = identity
 
-            location_obj, _ = Location.objects.get_or_create(
+            location_obj, location_created = Location.objects.get_or_create(
                 pincode=core.get('pincode') or '',
                 district=core.get('district') or '',
                 mandal=core.get('mandal') or '',
@@ -449,9 +497,9 @@ def verify_otp(request):
         if updated_attempts >= OTP_ATTEMPT_LIMIT:
             request.session.pop('reg_otp', None)
             request.session.pop('reg_otp_attempts', None)
-            messages.error(request, 'Too many invalid OTP attempts. Please register again to generate a new OTP.', extra_tags='otp')
+            messages.error(request, _('Too many invalid OTP attempts. Please register again to generate a new OTP.'), extra_tags='otp')
             return redirect('register_choice')
-        messages.error(request, "Invalid OTP", extra_tags='otp')
+        messages.error(request, _("Invalid OTP"), extra_tags='otp')
 
     return render(request, 'kisan1/otp_verification.html', {
         'otp_attempts_left': attempts_left,
@@ -473,20 +521,20 @@ def login_view(request):
         role = request.POST.get('role', '').strip()
 
         if not is_valid_mobile(mobile):
-            messages.error(request, 'Enter a valid 10-digit mobile number.', extra_tags='login')
+            messages.error(request, _('Enter a valid 10-digit mobile number.'), extra_tags='login')
             return render(request, 'kisan1/login.html')
 
         user_exists = UserRegistration.objects.filter(mobile=mobile, role=role).exists()
         if not user_exists:
-            messages.error(request, "User not registered!", extra_tags='login')
+            messages.error(request, _("User not registered!"), extra_tags='login')
             return render(request, 'kisan1/login.html')
 
         if not can_attempt_login(mobile, context='login'):
-            messages.error(request, 'Too many failed login attempts. Please wait before trying again.', extra_tags='login')
+            messages.error(request, _('Too many failed login attempts. Please wait before trying again.'), extra_tags='login')
             return render(request, 'kisan1/login.html')
 
         if not can_send_otp(mobile, context='login'):
-            messages.error(request, 'Too many OTP requests. Please wait a few minutes and try again.', extra_tags='login')
+            messages.error(request, _('Too many OTP requests. Please wait a few minutes and try again.'), extra_tags='login')
             return render(request, 'kisan1/login.html')
 
         request.session.pop('login_otp_attempts', None)
@@ -515,7 +563,7 @@ def otp_view(request):
     if is_otp_expired(otp_payload):
         request.session.pop('login_otp', None)
         request.session.pop('login_otp_attempts', None)
-        messages.error(request, 'OTP has expired. Please login again to generate a new OTP.', extra_tags='otp')
+        messages.error(request, _('OTP has expired. Please login again to generate a new OTP.'), extra_tags='otp')
         return render(request, 'kisan1/otp_verify.html', {
             'otp_attempts_left': OTP_ATTEMPT_LIMIT,
             'otp_remaining_seconds': 0,
@@ -525,14 +573,14 @@ def otp_view(request):
     if attempts >= OTP_ATTEMPT_LIMIT:
         request.session.pop('login_otp', None)
         request.session.pop('login_otp_attempts', None)
-        messages.error(request, 'Too many invalid OTP attempts. Please login again to generate a new OTP.', extra_tags='login')
+        messages.error(request, _('Too many invalid OTP attempts. Please login again to generate a new OTP.'), extra_tags='login')
         return redirect('login')
 
     if request.method == "POST":
         if is_otp_expired(otp_payload):
             request.session.pop('login_otp', None)
             request.session.pop('login_otp_attempts', None)
-            messages.error(request, 'OTP has expired. Please login again to generate a new OTP.', extra_tags='otp')
+            messages.error(request, _('OTP has expired. Please login again to generate a new OTP.'), extra_tags='otp')
             return render(request, 'kisan1/otp_verify.html', {
                 'otp_attempts_left': OTP_ATTEMPT_LIMIT,
                 'otp_remaining_seconds': 0,
@@ -545,7 +593,7 @@ def otp_view(request):
 
             user = get_object_or_404(UserRegistration, mobile=mobile, role=role)
             if user.identity_id is None and mobile:
-                identity, _ = UserIdentity.objects.get_or_create(mobile=mobile)
+                identity, identity_created = UserIdentity.objects.get_or_create(mobile=mobile)
                 user.identity = identity
                 user.save(update_fields=['identity'])
 
@@ -574,9 +622,9 @@ def otp_view(request):
         if updated_attempts >= OTP_ATTEMPT_LIMIT:
             request.session.pop('login_otp', None)
             request.session.pop('login_otp_attempts', None)
-            messages.error(request, 'Too many invalid OTP attempts. Please login again to generate a new OTP.', extra_tags='login')
+            messages.error(request, _('Too many invalid OTP attempts. Please login again to generate a new OTP.'), extra_tags='login')
             return redirect('login')
-        messages.error(request, "Invalid OTP", extra_tags='otp')
+        messages.error(request, _("Invalid OTP"), extra_tags='otp')
 
     return render(request, 'kisan1/otp_verify.html', {
         'otp_attempts_left': attempts_left,

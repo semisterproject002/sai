@@ -1,7 +1,7 @@
 ﻿{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ LANGUAGE_CODE|default:'en' }}">
 
 <head>
     <meta charset="UTF-8">
@@ -273,10 +273,11 @@
 </head>
 
 <body>
-    <a href="{% url 'register_choice' %}" class="back-btn">Back</a>
+    <a href="{% url 'register_choice' %}" class="back-btn">{% trans "Back" %}</a>
     <div class="reg-card">
         <h2>{% trans "Labor Registration" %}</h2>
         <p>{% trans "Complete your profile & get employability / work opportunities" %}</p>
+        {% include 'kisan1/partials/form_messages.html' %}
 
         <form id="laborForm" method="POST">
             {% csrf_token %}
@@ -380,18 +381,6 @@
                 </div>
             </div>
 
-            {% if messages %}
-            <div class="container mt-3 mb-3">
-                {% for message in messages %}
-                <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-{{ message.tags }}{% endif %} alert-dismissible fade show"
-                    role="alert"
-                    style="color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid;">
-                    <strong>Wait!</strong> {{ message }}
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
             <button type="submit" class="btn-next">{% trans "Submit Register" %}</button>
         </form>
     </div>
@@ -399,7 +388,16 @@
 
     <script>
         document.getElementById('laborForm').addEventListener('submit', function (event) {
+            const ageField = document.querySelector('input[name="age"]');
             const checkedSkills = document.querySelectorAll('input[name="skills"]:checked');
+
+            function getExperienceLimit() {
+                const age = parseInt(ageField.value || '0', 10);
+                if (Number.isNaN(age)) {
+                    return null;
+                }
+                return Math.max(0, age - 18);
+            }
 
             if (checkedSkills.length === 0) {
                 event.preventDefault();
@@ -412,6 +410,14 @@
                 if (!expField || expField.value.trim() === "") {
                     event.preventDefault();
                     alert('{% trans "Please enter years of experience for:" %} ' + skill.value);
+                    return;
+                }
+
+                const limit = getExperienceLimit();
+                const years = parseInt(expField.value, 10);
+                if (limit !== null && !Number.isNaN(years) && years > limit) {
+                    event.preventDefault();
+                    alert('{% trans "Experience must be less than or equal to age minus 18." %} ' + skill.value + ': ' + limit);
                     return;
                 }
             }

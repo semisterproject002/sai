@@ -1,6 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
+from django.utils.translation import gettext_lazy as _
 
 from kisan1.models import (
     LaborBooking,
@@ -22,7 +23,7 @@ ALLOWED_SHOP_CATEGORY_ALIASES = {
 
 mobile_validator = RegexValidator(
     regex=r'^[6-9][0-9]{9}$',
-    message='Mobile number must be a valid 10-digit Indian mobile number.',
+    message=_('Mobile number must be a valid 10-digit Indian mobile number.'),
     code='invalid_mobile',
 )
 
@@ -43,13 +44,13 @@ class PesticideForm(forms.ModelForm):
     def clean_shop_name(self):
         value = (self.cleaned_data.get('shop_name') or '').strip()
         if len(value) < 3:
-            raise forms.ValidationError('Shop name must be at least 3 characters long.')
+            raise forms.ValidationError(_('Shop name must be at least 3 characters long.'))
         return value
 
     def clean_license_id(self):
         value = (self.cleaned_data.get('license_id') or '').strip()
         if len(value) < 4:
-            raise forms.ValidationError('License ID must be at least 4 characters long.')
+            raise forms.ValidationError(_('License ID must be at least 4 characters long.'))
         return value
 
 
@@ -70,32 +71,32 @@ class ShopItemForm(forms.ModelForm):
         normalized = value.lower()
         if value not in ALLOWED_SHOP_CATEGORIES and normalized not in ALLOWED_SHOP_CATEGORY_ALIASES:
             raise ValidationError(
-                'Category must be one of: Seeds, Fertilizer, Pesticides, P&F, or P&F&S.'
+                _('Category must be one of: Seeds, Fertilizer, Pesticides, P&F, or P&F&S.')
             )
         return value
 
     def clean_item_name(self):
         value = (self.cleaned_data.get('item_name') or '').strip()
         if len(value) < 2:
-            raise forms.ValidationError('Item name must be at least 2 characters.')
+            raise forms.ValidationError(_('Item name must be at least 2 characters.'))
         return value
 
     def clean_market_price(self):
         value = self.cleaned_data.get('market_price')
         if value is None or value <= 0:
-            raise ValidationError('Market price must be greater than 0.')
+            raise ValidationError(_('Market price must be greater than 0.'))
         return value
 
     def clean_price(self):
         value = self.cleaned_data.get('price')
         if value is None or value <= 0:
-            raise ValidationError('Price must be greater than 0.')
+            raise ValidationError(_('Price must be greater than 0.'))
         return value
 
     def clean_stock_quantity(self):
         value = self.cleaned_data.get('stock_quantity')
         if value is None or value <= 0:
-            raise ValidationError('Stock quantity must be greater than 0.')
+            raise ValidationError(_('Stock quantity must be greater than 0.'))
         return value
 
 
@@ -107,7 +108,7 @@ class LaborBookingRequestForm(forms.ModelForm):
     def clean_duration(self):
         value = self.cleaned_data.get('duration')
         if value is None or value <= 0:
-            raise ValidationError('Duration must be greater than 0.')
+            raise ValidationError(_('Duration must be greater than 0.'))
         return value
 
 
@@ -119,7 +120,7 @@ class TractorBookingRequestForm(forms.ModelForm):
     def clean_duration_hours(self):
         value = self.cleaned_data.get('duration_hours')
         if value is None or value <= 0:
-            raise ValidationError('Duration hours must be greater than 0.')
+            raise ValidationError(_('Duration hours must be greater than 0.'))
         return value
 
 

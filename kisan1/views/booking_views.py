@@ -6,6 +6,7 @@ from django.db.models import Count, Sum
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.core.paginator import Paginator
+from django.utils.translation import gettext as _
 from kisan1.forms import LaborBookingRequestForm, ServiceSettingsForm, ShopItemForm, TractorBookingRequestForm
 from kisan1.models import Inventory
 
@@ -84,7 +85,7 @@ def _ensure_role(request, expected_role):
 
 def _reject_self_booking(request, farmer, provider_user):
     if farmer.mobile == provider_user.mobile:
-        messages.error(request, "Self-booking is not allowed across your own accounts.")
+        messages.error(request, _("Self-booking is not allowed across your own accounts."))
         return redirect('main_home')
     return None
 
@@ -186,14 +187,14 @@ def update_service_settings(request, role):
     user_profile = get_object_or_404(UserRegistration, mobile=request.session['mobile'], role=role)
     form = ServiceSettingsForm(request.POST)
     if not form.is_valid():
-        messages.error(request, 'Please provide valid service settings values.')
+        messages.error(request, _('Please provide valid service settings values.'))
         return redirect('dashboard', role=role)
 
     _set_service_rate(user_profile, role, form.cleaned_data['rate'])
     user_profile.is_available = form.cleaned_data['is_available']
     user_profile.service_status = form.cleaned_data['service_status']
     user_profile.save(update_fields=['is_available', 'service_status'])
-    messages.success(request, 'Service settings updated successfully.')
+    messages.success(request, _('Service settings updated successfully.'))
     return redirect('dashboard', role=role)
 
 def dashboard(request, role):
@@ -224,11 +225,11 @@ def dashboard(request, role):
         shop_profile = PesticideProfile.objects.filter(user=user_profile).first()
         if request.method == 'POST':
             if not shop_profile:
-                messages.error(request, 'Complete P&F registration first to manage inventory.')
+                messages.error(request, _('Complete P&F registration first to manage inventory.'))
             elif 'add_product' in request.POST:
                 item_form = ShopItemForm(request.POST)
                 if not item_form.is_valid():
-                    messages.error(request, 'Please provide valid product, category, market price, shop price, and stock quantity.')
+                    messages.error(request, _('Please provide valid product, category, market price, shop price, and stock quantity.'))
                 else:
                     item_name = item_form.cleaned_data['item_name']
                     category = item_form.cleaned_data['category']
@@ -253,19 +254,30 @@ def dashboard(request, role):
                         created = created or item_created
 
                     _sync_shop_available_products(shop_profile)
-                    action = 'added' if created else 'updated'
-                    messages.success(request, f"Product '{inventory_item.item_name}' {action} in inventory.")
+                    if created:
+                        messages.success(
+                            request,
+                            _("Product '%(item_name)s' added to inventory.") % {'item_name': inventory_item.item_name},
+                        )
+                    else:
+                        messages.success(
+                            request,
+                            _("Product '%(item_name)s' updated in inventory.") % {'item_name': inventory_item.item_name},
+                        )
                     return redirect('dashboard', role='pesticide')
-            elif 'save_shop_price' in request.POST:
+            elif 'save_shop_price' in request.POST or 'update_product_price' in request.POST:
                 item_id = request.POST.get('item_id')
-                shop_price = request.POST.get('shop_price')
+                shop_price = request.POST.get('shop_price') or request.POST.get('new_price')
                 try:
                     item = PesticideInventory.objects.get(id=item_id, shop=user_profile)
                     item.price = _parse_positive_int(shop_price, default=item.price)
                     item.save(update_fields=['price'])
-                    messages.success(request, f"Updated shop price for '{item.item_name}'.")
+                    messages.success(
+                        request,
+                        _("Updated shop price for '%(item_name)s'.") % {'item_name': item.item_name},
+                    )
                 except PesticideInventory.DoesNotExist:
-                    messages.error(request, 'Unable to update price for this product.')
+                    messages.error(request, _('Unable to update price for this product.'))
                 return redirect('dashboard', role='pesticide')
 
         context['shop'] = shop_profile
@@ -311,19 +323,19 @@ def book_labor(request, labor_id):
     laborer = get_object_or_404(LaborProfile, id=labor_id)
     if request.method == 'POST':
         if not check_login(request):
-            messages.error(request, "Please login to book services.")
+            messages.error(request, _("Please login to book services."))
             return redirect('login')
 
         farmer = get_logged_in_user(request)
         if not _ensure_role(request, 'farmer'):
-            messages.error(request, "Please login with farmer role to place bookings.")
+            messages.error(request, _("Please login with farmer role to place bookings."))
             return redirect('login')
         blocked = _reject_self_booking(request, farmer, laborer.user)
         if blocked:
             return blocked
         form = LaborBookingRequestForm(request.POST)
         if not form.is_valid():
-            messages.error(request, 'Please provide valid labor booking details.')
+            messages.error(request, _('Please provide valid labor booking details.'))
             return render(request, 'kisan1/book_labor.html', {'laborer': laborer, 'errors': form.errors})
 
         duration = form.cleaned_data['duration']
@@ -346,8 +358,8 @@ def book_labor(request, labor_id):
             messages.error(request, str(exc))
             return redirect('book_labor', labor_id=labor_id)
 
-        request.session['success_title'] = "Labor Request Sent!"
-        request.session['success_msg'] = "Labor is hired but please wait for his approval."
+        request.session['success_title'] = _("Labor Request Sent!")
+        request.session['success_msg'] = _("Labor is hired but please wait for approval.")
         return redirect('order_success')
 
     return render(request, 'kisan1/book_labor.html', {'laborer': laborer})
@@ -359,19 +371,19 @@ def book_tractor(request, tractor_id):
     tractor_owner = get_object_or_404(TractorProfile, id=tractor_id)
     if request.method == 'POST':
         if not check_login(request):
-            messages.error(request, "Please login to book services.")
+            messages.error(request, _("Please login to book services."))
             return redirect('login')
 
         farmer = get_logged_in_user(request)
         if not _ensure_role(request, 'farmer'):
-            messages.error(request, "Please login with farmer role to place bookings.")
+            messages.error(request, _("Please login with farmer role to place bookings."))
             return redirect('login')
         blocked = _reject_self_booking(request, farmer, tractor_owner.user)
         if blocked:
             return blocked
         form = TractorBookingRequestForm(request.POST)
         if not form.is_valid():
-            messages.error(request, 'Please provide valid tractor booking details.')
+            messages.error(request, _('Please provide valid tractor booking details.'))
             return render(request, 'kisan1/book_tractor.html', {'tractor': tractor_owner, 'errors': form.errors})
 
         duration_hours = form.cleaned_data['duration_hours']
@@ -394,8 +406,8 @@ def book_tractor(request, tractor_id):
             messages.error(request, str(exc))
             return redirect('book_tractor', tractor_id=tractor_id)
 
-        request.session['success_title'] = "Tractor Request Sent!"
-        request.session['success_msg'] = "Your request is sent to the tractor driver. Please wait for his confirmation."
+        request.session['success_title'] = _("Tractor Request Sent!")
+        request.session['success_msg'] = _("Your request has been sent to the tractor driver. Please wait for confirmation.")
         return redirect('order_success')
 
     return render(request, 'kisan1/book_tractor.html', {'tractor': tractor_owner})
@@ -407,12 +419,12 @@ def book_tool(request, tool_id):
     tool_shop = get_object_or_404(ToolsProfile, id=tool_id)
     if request.method == 'POST':
         if not check_login(request):
-            messages.error(request, "Please login to book services.")
+            messages.error(request, _("Please login to book services."))
             return redirect('login')
 
         farmer = get_logged_in_user(request)
         if not _ensure_role(request, 'farmer'):
-            messages.error(request, "Please login with farmer role to place bookings.")
+            messages.error(request, _("Please login with farmer role to place bookings."))
             return redirect('login')
         blocked = _reject_self_booking(request, farmer, tool_shop.user)
         if blocked:
@@ -442,7 +454,7 @@ def book_tool(request, tool_id):
                     tools_list.append(f"{tool} ({hours} hrs @ Rs. {price_per_hour}/hr)")
 
         if not tools_list:
-            messages.error(request, "Please select at least one tool and enter the required hours.")
+            messages.error(request, _("Please select at least one tool and enter the required hours."))
             return redirect('book_tool', tool_id=tool_id)
 
         tools_selected = ", ".join(tools_list)
@@ -471,8 +483,8 @@ def book_tool(request, tool_id):
             total_amount=total_cost,
         )
 
-        request.session['success_title'] = "Tools Booked!"
-        request.session['success_msg'] = "Tools are booked but please wait for confirmation by the owner."
+        request.session['success_title'] = _("Tools Booked!")
+        request.session['success_msg'] = _("Tools are booked, but please wait for confirmation by the owner.")
         return redirect('order_success')
 
     return render(request, 'kisan1/book_tool.html', {'tool_shop': tool_shop})
@@ -484,12 +496,12 @@ def request_lease(request, land_id):
     land = get_object_or_404(LeaseProfile, id=land_id)
     if request.method == 'POST':
         if not check_login(request):
-            messages.error(request, "Please login to book services.")
+            messages.error(request, _("Please login to book services."))
             return redirect('login')
 
         farmer = get_logged_in_user(request)
         if not _ensure_role(request, 'farmer'):
-            messages.error(request, "Please login with farmer role to place bookings.")
+            messages.error(request, _("Please login with farmer role to place bookings."))
             return redirect('login')
         blocked = _reject_self_booking(request, farmer, land.user)
         if blocked:
@@ -516,8 +528,8 @@ def request_lease(request, land_id):
             total_amount=0,
         )
 
-        request.session['success_title'] = "Lease Request Sent!"
-        request.session['success_msg'] = "Your request is sent. Wait for owner approval."
+        request.session['success_title'] = _("Lease Request Sent!")
+        request.session['success_msg'] = _("Your request has been sent. Please wait for owner approval.")
         return redirect('order_success')
 
     return render(request, 'kisan1/request_lease.html', {'land': land})
@@ -531,12 +543,12 @@ def book_shop(request, shop_id):
 
     if request.method == 'POST':
         if not check_login(request):
-            messages.error(request, "Please login to book services.")
+            messages.error(request, _("Please login to book services."))
             return redirect('login')
 
         farmer = get_logged_in_user(request)
         if not _ensure_role(request, 'farmer'):
-            messages.error(request, "Please login with farmer role to place bookings.")
+            messages.error(request, _("Please login with farmer role to place bookings."))
             return redirect('login')
         blocked = _reject_self_booking(request, farmer, shop.user)
         if blocked:
@@ -552,13 +564,19 @@ def book_shop(request, shop_id):
             
             if quantity > 0:
                 if quantity > item.stock_quantity:
-                    messages.error(request, f"Sorry, only {item.stock_quantity} units of {item.item_name} available.")
+                    messages.error(
+                        request,
+                        _("Sorry, only %(quantity)s units of %(item_name)s are available.") % {
+                            'quantity': item.stock_quantity,
+                            'item_name': item.item_name,
+                        },
+                    )
                     return redirect('book_shop', shop_id=shop_id)
                 calculated_total_cost += quantity * item.price
                 items_ordered.append(f"{item.item_name} ({quantity} units @ Rs. {item.price})")
 
         if not items_ordered:
-            messages.error(request, "Please select at least one item.")
+            messages.error(request, _("Please select at least one item."))
             return redirect('book_shop', shop_id=shop_id)
 
         display_shop_name = shop.shop_name if shop.shop_name else f"{shop.user.name}'s Shop"
@@ -591,7 +609,7 @@ def _update_shop_order_status(booking, status):
 @role_required('labor')
 def accept_labor_booking(request, booking_id):
     if not _ensure_role(request, 'labor'):
-        messages.error(request, "Unauthorized action for this role.")
+        messages.error(request, _("Unauthorized action for this role."))
         return redirect('login')
     booking = get_object_or_404(LaborBooking, id=booking_id)
     if request.method == 'POST':
@@ -601,7 +619,7 @@ def accept_labor_booking(request, booking_id):
             service_type='labor',
             status=BookingStatus.CONFIRMED,
         )
-        messages.success(request, f"Accepted booking from {booking.farmer.name}!")
+        messages.success(request, _("Accepted booking from %(farmer_name)s!") % {'farmer_name': booking.farmer.name})
     return redirect('dashboard', role='labor')
 
 
@@ -609,7 +627,7 @@ def accept_labor_booking(request, booking_id):
 @role_required('tractor')
 def accept_tractor_booking(request, booking_id):
     if not _ensure_role(request, 'tractor'):
-        messages.error(request, "Unauthorized action for this role.")
+        messages.error(request, _("Unauthorized action for this role."))
         return redirect('login')
     booking = get_object_or_404(TractorBooking, id=booking_id)
     if request.method == 'POST':
@@ -619,7 +637,7 @@ def accept_tractor_booking(request, booking_id):
             service_type='tractor',
             status=BookingStatus.CONFIRMED,
         )
-        messages.success(request, f"Accepted tractor booking from {booking.farmer.name}!")
+        messages.success(request, _("Accepted tractor booking from %(farmer_name)s!") % {'farmer_name': booking.farmer.name})
     return redirect('dashboard', role='tractor')
 
 
@@ -627,7 +645,7 @@ def accept_tractor_booking(request, booking_id):
 @role_required('tools')
 def accept_tool_booking(request, booking_id):
     if not _ensure_role(request, 'tools'):
-        messages.error(request, "Unauthorized action for this role.")
+        messages.error(request, _("Unauthorized action for this role."))
         return redirect('login')
     booking = get_object_or_404(ToolRentalBooking, id=booking_id)
     if request.method == 'POST':
@@ -637,7 +655,7 @@ def accept_tool_booking(request, booking_id):
             service_type='tools',
             status=BookingStatus.CONFIRMED,
         )
-        messages.success(request, f"Accepted tool rental from {booking.farmer.name}!")
+        messages.success(request, _("Accepted tool rental from %(farmer_name)s!") % {'farmer_name': booking.farmer.name})
     return redirect('dashboard', role='tools')
 
 
@@ -645,7 +663,7 @@ def accept_tool_booking(request, booking_id):
 @role_required('lease')
 def accept_lease_request(request, booking_id):
     if not _ensure_role(request, 'lease'):
-        messages.error(request, "Unauthorized action for this role.")
+        messages.error(request, _("Unauthorized action for this role."))
         return redirect('login')
     booking = get_object_or_404(LeaseLandRequest, id=booking_id)
     if request.method == 'POST':
@@ -655,7 +673,7 @@ def accept_lease_request(request, booking_id):
             service_type='lease',
             status=BookingStatus.CONFIRMED,
         )
-        messages.success(request, f"Accepted lease meeting with {booking.farmer.name}!")
+        messages.success(request, _("Accepted lease meeting with %(farmer_name)s!") % {'farmer_name': booking.farmer.name})
     return redirect('dashboard', role='lease')
 
 
@@ -663,7 +681,7 @@ def accept_lease_request(request, booking_id):
 @role_required('pesticide')
 def accept_shop_order(request, booking_id):
     if not _ensure_role(request, 'pesticide'):
-        messages.error(request, "Unauthorized action for this role.")
+        messages.error(request, _("Unauthorized action for this role."))
         return redirect('login')
     booking = get_object_or_404(ShopOrder, id=booking_id)
     
@@ -685,15 +703,18 @@ def accept_shop_order(request, booking_id):
                         inventory_item.stock_quantity -= qty
                         inventory_item.save()
                     else:
-                        messages.error(request, f'Insufficient stock for {product_name}.')
+                        messages.error(request, _('Insufficient stock for %(product_name)s.') % {'product_name': product_name})
                         return redirect('dashboard', role='pesticide')
 
             # Update status after successful inventory transaction
             _update_shop_order_status(booking, BookingStatus.CONFIRMED)
-            messages.success(request, f"Accepted Shop Order from {booking.farmer.name} and updated inventory!")
+            messages.success(
+                request,
+                _("Accepted shop order from %(farmer_name)s and updated inventory!") % {'farmer_name': booking.farmer.name},
+            )
         except Exception as e:
             logger.error(f"Error processing shop order {booking_id}: {e}")
-            messages.error(request, "An error occurred while processing the stock. Please try again.")
+            messages.error(request, _("An error occurred while processing the stock. Please try again."))
 
     return redirect('dashboard', role='pesticide')
 
@@ -702,7 +723,7 @@ def accept_shop_order(request, booking_id):
 @role_required('labor')
 def reject_labor_booking(request, booking_id):
     if not _ensure_role(request, 'labor'):
-        messages.error(request, "Unauthorized action for this role.")
+        messages.error(request, _("Unauthorized action for this role."))
         return redirect('login')
     booking = get_object_or_404(LaborBooking, id=booking_id)
     _sync_booking_and_order_status(
@@ -711,7 +732,7 @@ def reject_labor_booking(request, booking_id):
         service_type='labor',
         status=BookingStatus.REJECTED,
     )
-    messages.warning(request, "Booking Rejected.")
+    messages.warning(request, _("Booking rejected."))
     return redirect('dashboard', role='labor')
 
 
@@ -719,7 +740,7 @@ def reject_labor_booking(request, booking_id):
 @role_required('tractor')
 def reject_tractor_booking(request, booking_id):
     if not _ensure_role(request, 'tractor'):
-        messages.error(request, "Unauthorized action for this role.")
+        messages.error(request, _("Unauthorized action for this role."))
         return redirect('login')
     booking = get_object_or_404(TractorBooking, id=booking_id)
     _sync_booking_and_order_status(
@@ -728,7 +749,7 @@ def reject_tractor_booking(request, booking_id):
         service_type='tractor',
         status=BookingStatus.REJECTED,
     )
-    messages.warning(request, "Booking Rejected.")
+    messages.warning(request, _("Booking rejected."))
     return redirect('dashboard', role='tractor')
 
 
@@ -736,7 +757,7 @@ def reject_tractor_booking(request, booking_id):
 @role_required('tools')
 def reject_tool_booking(request, booking_id):
     if not _ensure_role(request, 'tools'):
-        messages.error(request, "Unauthorized action for this role.")
+        messages.error(request, _("Unauthorized action for this role."))
         return redirect('login')
     booking = get_object_or_404(ToolRentalBooking, id=booking_id)
     _sync_booking_and_order_status(
@@ -745,7 +766,7 @@ def reject_tool_booking(request, booking_id):
         service_type='tools',
         status=BookingStatus.REJECTED,
     )
-    messages.warning(request, "Rental Request Rejected.")
+    messages.warning(request, _("Rental request rejected."))
     return redirect('dashboard', role='tools')
 
 
@@ -753,7 +774,7 @@ def reject_tool_booking(request, booking_id):
 @role_required('lease')
 def reject_lease_request(request, booking_id):
     if not _ensure_role(request, 'lease'):
-        messages.error(request, "Unauthorized action for this role.")
+        messages.error(request, _("Unauthorized action for this role."))
         return redirect('login')
     booking = get_object_or_404(LeaseLandRequest, id=booking_id)
     _sync_booking_and_order_status(
@@ -762,7 +783,7 @@ def reject_lease_request(request, booking_id):
         service_type='lease',
         status=BookingStatus.REJECTED,
     )
-    messages.warning(request, "Lease Request Rejected.")
+    messages.warning(request, _("Lease request rejected."))
     return redirect('dashboard', role='lease')
 
 
@@ -770,27 +791,27 @@ def reject_lease_request(request, booking_id):
 @role_required('pesticide')
 def reject_shop_order(request, booking_id):
     if not _ensure_role(request, 'pesticide'):
-        messages.error(request, "Unauthorized action for this role.")
+        messages.error(request, _("Unauthorized action for this role."))
         return redirect('login')
     booking = get_object_or_404(ShopOrder, id=booking_id)
     _update_shop_order_status(booking, BookingStatus.REJECTED)
-    messages.warning(request, "Shop Order Rejected.")
+    messages.warning(request, _("Shop order rejected."))
     return redirect('dashboard', role='pesticide')
 
 
 def booking_success_view(request):
     if not check_login(request):
         return redirect('login')
-    title = request.session.pop('success_title', 'Order Confirmed!')
-    message = request.session.pop('success_msg', 'Your shop order has been placed successfully.')
+    title = request.session.pop('success_title', _('Order Confirmed!'))
+    message = request.session.pop('success_msg', _('Your shop order has been placed successfully.'))
     return render(request, 'kisan1/booking_success.html', {'title': title, 'message': message})
 
 
 def order_success_view(request):
     if not check_login(request):
         return redirect('login')
-    title = request.session.pop('success_title', 'Booking Sent Successfully!')
-    message = request.session.pop('success_msg', 'Your request has been sent to the owner.')
+    title = request.session.pop('success_title', _('Booking Sent Successfully!'))
+    message = request.session.pop('success_msg', _('Your request has been sent to the owner.'))
     return render(request, 'kisan1/order_success.html', {'title': title, 'message': message})
 
 
@@ -833,8 +854,8 @@ def cart_view(request):
         )
         del request.session['temp_cart']
 
-        request.session['success_title'] = "Order Confirmed!"
-        request.session['success_msg'] = "Your order is confirmed, but the shop owner has not given approval yet."
+        request.session['success_title'] = _("Order Confirmed!")
+        request.session['success_msg'] = _("Your order is confirmed, but the shop owner has not given approval yet.")
         return redirect('booking_success')
 
     orders = ShopOrder.objects.filter(farmer=farmer).order_by('-created_at')
@@ -868,7 +889,14 @@ def cancel_booking(request, type, id):
         if booking:
             booking.status = BookingStatus.CANCELLED
             booking.save()
-            messages.info(request, f"Your {type} request has been cancelled.")
+            booking_messages = {
+                'tool': _("Your tool request has been cancelled."),
+                'tractor': _("Your tractor request has been cancelled."),
+                'labor': _("Your labor request has been cancelled."),
+                'shop': _("Your shop order has been cancelled."),
+                'lease': _("Your lease request has been cancelled."),
+            }
+            messages.info(request, booking_messages.get(type, _("Your request has been cancelled.")))
 
     return redirect('farmer_booking')
 

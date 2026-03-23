@@ -214,22 +214,22 @@
         style="background: var(--primary-color); color: white; border-radius: 16px; padding: 18px 24px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-md);">
         <button onclick="history.back()" class="back-btn"
             style="background: rgba(255, 255, 255, 0.2); border: none; color: white; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600;">
-            Back</button>
+            {% trans "Back" %}</button>
 
         <h3 style="margin: 0; text-transform: uppercase; font-weight: 800;">
-            {{ farmer.name|default:'Farmer' }}'s Portal
+            {{ farmer.name }}&#39;S {% trans "Dashboard" %}
             <span style="font-size: 0.7em; opacity: 0.9; font-weight: 400; margin-left: 10px;">
-                (Role: Farmer)
+                ({% trans "Role" %}: {% trans "Farmer" %})
             </span>
         </h3>
 
         <div class="menu-container">
             <button class="menu-btn"
-                style="background: white; color: var(--primary-color); border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer;">Menu</button>
+                style="background: white; color: var(--primary-color); border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer;">{% trans "Menu" %}</button>
             <div class="dropdown-content">
-                <a href="{% url 'register_choice' %}">Home (Select Role)</a>
-                <a href="{% url 'farmer_booking' %}">My Bookings</a>
-                <a href="{% url 'logout' %}">Logout</a>
+                <a href="{% url 'register_choice' %}">{% trans "Select Your Role" %}</a>
+                <a href="{% url 'farmer_booking' %}">{% trans "Track My Bookings" %}</a>
+                <a href="{% url 'logout' %}">{% trans "Logout" %}</a>
             </div>
         </div>
     </div>
@@ -240,15 +240,15 @@
     </div>
 
     <div class="filter-bar">
-        <label style="font-weight: bold; color: #fff;">Show Categories:</label>
+        <label style="font-weight: bold; color: #fff;">{% trans "Show Categories:" %}</label>
         <select id="dashboardFilter" onchange="filterDashboard()"
             style="padding: 10px 15px; border-radius: 8px; border: none; background: white; font-weight: 700;">
-            <option value="all">All Services</option>
-            <option value="labor-sec">Laborers</option>
-            <option value="tractor-sec">Tractor Services</option>
-            <option value="tool-sec">Farm Tools</option>
-            <option value="lease-sec">Land Lease</option>
-            <option value="shop-sec">Pesticide Shops</option>
+            <option value="all">{% trans "All Services" %}</option>
+            <option value="labor-sec">{% trans "Laborers" %}</option>
+            <option value="tractor-sec">{% trans "Tractor Services" %}</option>
+            <option value="tool-sec">{% trans "Farm Tools" %}</option>
+            <option value="lease-sec">{% trans "Land Lease" %}</option>
+            <option value="shop-sec">{% trans "Pesticide Shops" %}</option>
         </select>
     </div>
 
@@ -314,13 +314,15 @@
             <div class="item-card" style="border-top: 6px solid var(--lease-purple);">
                 <div>
                     <h4 style="color: #111;">{{ land.user.village }}</h4>
-                    <p><strong>{% trans "Area" %}:</strong> {{ land.land_area }} {% trans "Acres" %}</p>
+                    <p><strong>{% trans "Area" %}:</strong> {{ land.total_land }} {% trans "Acres" %}</p>
                     <p class="price-tag" style="color: var(--lease-purple);">
                         Rs. {{ land.lease_per_day }} / {% trans "Day" %}</p>
 
                 </div>
                 <a href="{% url 'request_lease' land.id %}" class="btn btn-lease">{% trans "Request Lease" %}</a>
             </div>
+            {% empty %}
+            <div class="empty-msg">{% trans "No land listings available right now." %}</div>
             {% endfor %}
         </div>
     </div>
@@ -337,6 +339,8 @@
                 </div>
                 <a href="{% url 'book_shop' shop.id %}" class="btn btn-pesticide">{% trans "Buy Products" %}</a>
             </div>
+            {% empty %}
+            <div class="empty-msg">{% trans "No pesticide shops available right now." %}</div>
             {% endfor %}
         </div>
     </div>

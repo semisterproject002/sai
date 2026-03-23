@@ -1,7 +1,7 @@
 ﻿{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ LANGUAGE_CODE|default:'en' }}">
 
 <head>
     <meta charset="UTF-8">
@@ -199,6 +199,7 @@
     <div class="reg-card">
         <h2>{% trans "Shop Registration" %}</h2>
         <p>{% trans "Join the Kisan Asara network & grow your business" %}</p>
+        {% include 'kisan1/partials/form_messages.html' %}
 
         <form method="POST">
             {% csrf_token %}
@@ -268,7 +269,7 @@
                     <label>{% trans "Shop License ID:" %}</label>
                     <input type="text" name="license_id" placeholder="{% trans 'e.g., TS-FERT-2024-1234' %}"
                         minlength="8" maxlength="20" pattern="^[A-Z0-9\-]{8,20}$" style="text-transform: uppercase;"
-                        title="License must be 8-20 characters long and contain only uppercase letters, numbers, and hyphens (-)."
+                        title="{% trans 'License must be 8-20 characters long and contain only uppercase letters, numbers, and hyphens (-).' %}"
                         oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9\-]/g, '');" required>
                     <small style="color: #666; font-size: 11px; margin-top: 4px; display: block;">* {% trans "8-20
                         letters, numbers, or hyphens (-)." %}</small>
@@ -302,10 +303,23 @@
             }
 
             form.addEventListener('submit', function (event) {
+                const ageField = form.querySelector('input[name="age"]');
+                const sinceYearsField = form.querySelector('input[name="since_years"]');
                 const selectedProducts = document.querySelectorAll('input[name="products"]:checked');
+
+                const age = parseInt(ageField.value || '0', 10);
+                const sinceYears = parseInt(sinceYearsField.value || '0', 10);
+                const experienceLimit = Number.isNaN(age) ? null : Math.max(0, age - 18);
+
                 if (selectedProducts.length === 0) {
                     event.preventDefault();
                     alert('{% trans "Please select at least one product to continue." %}');
+                    return;
+                }
+
+                if (experienceLimit !== null && !Number.isNaN(sinceYears) && sinceYears > experienceLimit) {
+                    event.preventDefault();
+                    alert('{% trans "Experience must be less than or equal to age minus 18." %} ' + experienceLimit);
                     return;
                 }
             });

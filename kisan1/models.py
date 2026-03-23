@@ -3,12 +3,13 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.contrib.auth.models import User
+from django.utils.translation import gettext_lazy as _
 from kisan1.pincode_data import is_hidden_pincode
 
 
 MOBILE_VALIDATOR = RegexValidator(
     regex=r'^[6-9][0-9]{9}$',
-    message='Mobile number must be a valid 10-digit Indian mobile number.',
+    message=_('Mobile number must be a valid 10-digit Indian mobile number.'),
 )
 
 
@@ -146,11 +147,11 @@ class PesticideInventory(models.Model):
 
     def clean(self):
         if self.market_price is None or self.market_price <= 0:
-            raise ValidationError({'market_price': 'Market price must be greater than 0.'})
+            raise ValidationError({'market_price': _('Market price must be greater than 0.')})
         if self.price is None or self.price <= 0:
-            raise ValidationError({'price': 'Price must be greater than 0.'})
+            raise ValidationError({'price': _('Price must be greater than 0.')})
         if self.stock_quantity is None or self.stock_quantity <= 0:
-            raise ValidationError({'stock_quantity': 'Stock quantity must be greater than 0.'})
+            raise ValidationError({'stock_quantity': _('Stock quantity must be greater than 0.')})
 
     def __str__(self):
         return f"{self.item_name} ({self.shop.name})"
@@ -256,9 +257,9 @@ class PincodeMapping(models.Model):
     def clean(self):
         normalized = (self.pincode or '').strip()
         if not normalized.isdigit() or not (5 <= len(normalized) <= 6):
-            raise ValidationError({'pincode': 'Pincode must be a 5 or 6 digit number.'})
+            raise ValidationError({'pincode': _('Pincode must be a 5 or 6 digit number.')})
         if is_hidden_pincode(normalized):
-            raise ValidationError({'pincode': 'This pincode is restricted and cannot be stored.'})
+            raise ValidationError({'pincode': _('This pincode is restricted and cannot be stored.')})
 
     def save(self, *args, **kwargs):
         self.full_clean()

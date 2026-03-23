@@ -1,7 +1,7 @@
 ﻿{% extends 'kisan1/base.html' %}
 {% load i18n %}
 {% block content %}
-<div class="dashboard-shell">
+<div class="dashboard-shell dashboard-shell--{{ role }}">
     <div class="dashboard-topbar">
 
         <!-- ✅ FIXED BACK BUTTON -->
@@ -108,9 +108,9 @@
 
             <label for="serviceStatus">{% trans "Service Status" %}</label>
             <select id="serviceStatus" name="service_status">
-                <option value="Active" {% if service_status=='Active' %}selected{% endif %}>{% trans "Active" %}
+                <option value="Active" {% if service_status == 'Active' %}selected{% endif %}>{% trans "Active" %}
                 </option>
-                <option value="Paused" {% if service_status=='Paused' %}selected{% endif %}>{% trans "Paused" %}
+                <option value="Paused" {% if service_status == 'Paused' %}selected{% endif %}>{% trans "Paused" %}
                 </option>
             </select>
 

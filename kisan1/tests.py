@@ -314,6 +314,63 @@ class KisanAsaraTests(TestCase):
                 self.assertEqual(response.status_code, 302)
                 self.assertRedirects(response, reverse('verify_otp'))
 
+    def test_tractor_registration_blocks_experience_above_age_minus_eighteen(self):
+        response = self.client.post(reverse('tractor_register'), {
+            'name': 'Tractor Driver',
+            'mobile': '9234567890',
+            'age': '25',
+            'pincode': '503001',
+            'state': 'Telangana',
+            'district': 'Nizamabad',
+            'mandal': 'Armoor',
+            'village': 'Perkit',
+            'base_wage': '500',
+            'driving_license': 'TS0520230000123',
+            'experience': '8',
+            'services': ['Ploughing'],
+            'exp_Ploughing': '8',
+            'wage_Ploughing': '500',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(self.client.session.get('reg_otp'))
+
+    def test_labor_registration_blocks_skill_experience_above_age_minus_eighteen(self):
+        response = self.client.post(reverse('labor_register'), {
+            'name': 'Labor Person',
+            'mobile': '9345678901',
+            'age': '20',
+            'pincode': '503001',
+            'state': 'Telangana',
+            'district': 'Nizamabad',
+            'mandal': 'Armoor',
+            'village': 'Perkit',
+            'gender': 'Male',
+            'wage_amount': '450',
+            'wage_type': 'Per Day',
+            'skills': ['Ploughing'],
+            'exp_Ploughing': '3',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(self.client.session.get('reg_otp'))
+
+    def test_pesticide_registration_blocks_since_years_above_age_minus_eighteen(self):
+        response = self.client.post(reverse('register_pesticide'), {
+            'shop_name': 'Agro Shop',
+            'name': 'Shop Owner',
+            'age': '22',
+            'mobile': '9456789012',
+            'pincode': '503001',
+            'state': 'Telangana',
+            'district': 'Nizamabad',
+            'mandal': 'Armoor',
+            'village': 'Perkit',
+            'license_id': 'TS-FERT-2024-1234',
+            'since_years': '5',
+            'products': ['Seeds'],
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(self.client.session.get('reg_otp'))
+
     def test_reject_and_cancel_flow_updates_status(self):
         self._set_session(self.farmer, 'farmer')
         self.client.post(
@@ -325,6 +382,24 @@ class KisanAsaraTests(TestCase):
         self.assertEqual(response.status_code, 302)
         booking.refresh_from_db()
         self.assertEqual(booking.status, 'Cancelled')
+
+    def test_dashboard_shows_toast_messages_after_provider_action(self):
+        TractorBooking.objects.create(
+            farmer=self.farmer,
+            tractor_owner=self.tractor_profile,
+            booking_date='2026-03-24',
+            start_time='09:00',
+            duration_hours=2,
+            location='Field 4',
+            total_cost=1600,
+        )
+        booking = TractorBooking.objects.get(farmer=self.farmer, tractor_owner=self.tractor_profile)
+
+        self._set_session(self.tractor_user, 'tractor')
+        response = self.client.post(reverse('accept_tractor_booking', args=[booking.id]), follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'toast-notice')
+        self.assertContains(response, 'Accepted tractor booking from Test Farmer!')
 
     def test_role_guard_blocks_wrong_provider_actions(self):
         self._set_session(self.labor_user, 'labor')
@@ -403,7 +478,7 @@ class KisanAsaraTests(TestCase):
     def test_hidden_pincode_location_data_is_blocked(self):
         response = self.client.get(reverse('get_location_api'), {'pincode': '503111'})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {'success': False})
+        self.assertEqual(response.json(), {'success': False, 'error': 'Restricted Pincode'})
 
 
 
@@ -446,7 +521,7 @@ class KisanAsaraTests(TestCase):
     def test_hidden_pincode_location_data_is_blocked(self):
         response = self.client.get(reverse('get_location_api'), {'pincode': '503111'})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {'success': False})
+        self.assertEqual(response.json(), {'success': False, 'error': 'Restricted Pincode'})
 
 
 
@@ -470,7 +545,7 @@ class KisanAsaraTests(TestCase):
 
     def test_new_service_pincodes_are_available(self):
         load_telangana_pincodes(force=True)
-        for pincode in ['50300', '503306', '502316', '502331', '502286', '503001', '503002']:
+        for pincode in ['503224', '503306', '502316', '502331', '502286', '503001', '503002']:
             response = self.client.get(reverse('get_location_api'), {'pincode': pincode})
             self.assertEqual(response.status_code, 200)
             payload = response.json()

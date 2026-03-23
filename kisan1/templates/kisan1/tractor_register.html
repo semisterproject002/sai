@@ -250,10 +250,11 @@
 
 <body>
 
-    <a href="{% url 'register_choice' %}" class="back-btn">Back</a>
+    <a href="{% url 'register_choice' %}" class="back-btn">{% trans "Back" %}</a>
     <div class="reg-card">
         <h2>{% trans "Tractor Driver Register" %}</h2>
         <p>{% trans "Join our network & get profits / work opportunities" %}</p>
+        {% include 'kisan1/partials/form_messages.html' %}
 
         <form method="POST" id="driverRegistrationForm">
             {% csrf_token %}
@@ -385,6 +386,31 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const form = document.getElementById('driverRegistrationForm');
+            const ageField = form.querySelector('input[name="age"]');
+
+            function getExperienceLimit() {
+                const age = parseInt(ageField.value || '0', 10);
+                if (Number.isNaN(age)) {
+                    return null;
+                }
+                return Math.max(0, age - 18);
+            }
+
+            function validateExperienceField(field, fieldLabel) {
+                if (!field || field.value.trim() === '') {
+                    return true;
+                }
+                const limit = getExperienceLimit();
+                const years = parseInt(field.value, 10);
+                if (limit === null || Number.isNaN(years)) {
+                    return true;
+                }
+                if (years > limit) {
+                    alert("{% trans 'Experience must be less than or equal to age minus 18.' %}" + ' ' + fieldLabel + ': ' + limit);
+                    return false;
+                }
+                return true;
+            }
 
             form.addEventListener('submit', function (event) {
                 // 1. Double-check License Validation
@@ -393,6 +419,11 @@
 
                 if (!licenseRegex.test(licenseInput)) {
                     alert("{% trans 'Invalid License ID. It must start with TS followed by exactly 13 numbers.' %}");
+                    event.preventDefault();
+                    return;
+                }
+
+                if (!validateExperienceField(form.querySelector('input[name="experience"]'), "{% trans 'Total Experience (Yrs):' %}")) {
                     event.preventDefault();
                     return;
                 }
@@ -418,6 +449,11 @@
                             isMissingDetails = true;
                             missingDetailsMessage = "{% trans 'Please provide both Experience and Wage for selected service:' %} " + serviceName;
                             break;
+                        }
+
+                        if (!validateExperienceField(expField, serviceName)) {
+                            event.preventDefault();
+                            return;
                         }
                     }
                 }

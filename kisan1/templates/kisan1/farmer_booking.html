@@ -1,6 +1,6 @@
 ﻿{% load i18n %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ LANGUAGE_CODE|default:'en' }}">
 
 <head>
     <meta charset="UTF-8">
@@ -29,7 +29,6 @@
             min-height: 100vh;
             color: #fff;
             overflow-x: hidden;
-            /* Animated Deep Green Gradient Background */
             background: linear-gradient(135deg, #010a02, #063d14, #011406);
             background-size: 400% 400%;
             animation: gradientAnimation 15s ease infinite;
@@ -75,7 +74,6 @@
             letter-spacing: -1px;
         }
 
-        /* Section Titles */
         .section-title {
             font-size: 22px;
             font-weight: 700;
@@ -93,7 +91,6 @@
             background: rgba(255, 255, 255, 0.15);
         }
 
-        /* 3D Glassmorphism Cards */
         .request-card {
             background: var(--glass-bg);
             backdrop-filter: blur(10px);
@@ -108,22 +105,7 @@
             border: 1px solid rgba(255, 255, 255, 0.3);
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            position: relative;
-            overflow: hidden;
-            animation: slideUp 0.6s ease-out backwards;
             color: #333;
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(30px);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
         }
 
         .request-card:hover {
@@ -132,7 +114,6 @@
             background: #ffffff;
         }
 
-        /* Left-border colors for categories */
         .card-tool {
             border-left: 8px solid var(--tool-blue);
         }
@@ -172,7 +153,6 @@
             color: #2e7d32;
         }
 
-        /* Price Tag */
         .price-tag {
             font-size: 22px;
             font-weight: 800;
@@ -180,14 +160,12 @@
             margin-bottom: 8px;
         }
 
-        /* Status Badges */
         .status-badge {
             padding: 6px 16px;
             border-radius: 50px;
             font-size: 12px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
             display: inline-block;
             border: 1px solid transparent;
         }
@@ -216,7 +194,6 @@
             border-color: #ffcdd2;
         }
 
-        /* Action Buttons */
         .btn-group {
             margin-top: 15px;
             display: flex;
@@ -259,7 +236,6 @@
             transform: scale(1.05);
         }
 
-        /* Empty State */
         .empty-state {
             background: rgba(255, 255, 255, 0.05);
             padding: 80px 20px;
@@ -295,7 +271,68 @@
             transform: translateX(-5px);
         }
 
-        /* Mobile Adjustments */
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 9999;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background: #ffffff;
+            color: #042409;
+            transform: translateY(-2px);
+        }
+
+        .toast-stack {
+            position: fixed;
+            right: 16px;
+            top: 16px;
+            z-index: 2000;
+            display: grid;
+            gap: 12px;
+            width: min(340px, calc(100vw - 32px));
+        }
+
+        .toast-item {
+            padding: 14px 16px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 700;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+
+        .toast-item.success {
+            background: #e8f5e9;
+            color: #166534;
+        }
+
+        .toast-item.error {
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+        .toast-item.warning {
+            background: #fff7ed;
+            color: #9a3412;
+        }
+
+        .toast-item.info {
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
         @media (max-width: 600px) {
             .request-card {
                 text-align: center;
@@ -308,12 +345,28 @@
                 text-align: center !important;
                 width: 100%;
             }
+
+            .btn-group {
+                justify-content: center;
+            }
         }
     </style>
 </head>
 
 <body>
-    <button onclick="window.history.back()" class="back-btn" style="position:fixed;top:16px;left:16px;z-index:9999;">Back</button>
+    {% if messages %}
+    <div class="toast-stack">
+        {% for message in messages %}
+        <div class="toast-item {% if 'success' in message.tags %}success{% elif 'warning' in message.tags %}warning{% elif 'info' in message.tags %}info{% else %}error{% endif %}"
+            data-toast>
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <button onclick="window.history.back()" class="back-btn">{% trans "Back" %}</button>
+
     <div class="container">
         <h2>{% trans "My Service Requests" %}</h2>
 
@@ -334,10 +387,11 @@
                 <p><i class="fas fa-list-check"></i> <strong>{% trans "Tools:" %}</strong> {{ booking.tools_selected }}
                 </p>
                 <p><i class="fas fa-calendar-alt"></i> <strong>{% trans "Dates:" %}</strong> {{ booking.receive_date }}
-                    to {{ booking.return_date }}</p>
+                    {% trans "to" %} {{ booking.return_date }}</p>
             </div>
             <div style="text-align: right;">
                 <div class="price-tag">Rs. {{ booking.total_cost }}</div>
+                <br>
                 <span class="status-badge status-{{ booking.status }}">{{ booking.status }}</span>
                 <div class="btn-group">
                     {% if booking.status == 'Pending' %}
@@ -350,7 +404,7 @@
                     </form>
                     {% elif booking.status == 'Confirmed' %}
                     <button class="action-btn btn-track"
-                        onclick="alert('GPS Tracking will be available on delivery day.')">
+                        onclick="alert('GPS tracking will be available on delivery day.')">
                         <i class="fas fa-location-dot"></i> {% trans "Track" %}
                     </button>
                     {% endif %}
@@ -366,12 +420,14 @@
         <div class="request-card card-tractor" style="animation-delay: 0.2s;">
             <div class="card-details">
                 <h4>{{ booking.tractor_owner.user.name }}</h4>
-                <p><i class="fas fa-clock"></i> <strong>{% trans "Timing:" %}</strong> {{ booking.booking_date }} at {{ booking.start_time|time:"h:i A" }}</p>
+                <p><i class="fas fa-clock"></i> <strong>{% trans "Timing:" %}</strong> {{ booking.booking_date }} at {{
+                    booking.start_time|time:"h:i A" }}</p>
                 <p><i class="fas fa-hourglass-half"></i> <strong>{% trans "Duration:" %}</strong> {{
                     booking.duration_hours }} {% trans "Hours" %}</p>
             </div>
             <div style="text-align: right;">
                 <div class="price-tag">Rs. {{ booking.total_cost }}</div>
+                <br>
                 <span class="status-badge status-{{ booking.status }}">{{ booking.status }}</span>
                 <div class="btn-group">
                     {% if booking.status == 'Pending' %}
@@ -382,8 +438,7 @@
                         </button>
                     </form>
                     {% elif booking.status == 'Confirmed' %}
-                    <button class="action-btn btn-track"
-                        onclick="alert('Driver Location: On the way to {{ booking.location }}')">
+                    <button class="action-btn btn-track" onclick="alert('Driver is on the way to your location.')">
                         <i class="fas fa-map-location-dot"></i> {% trans "Track Location" %}
                     </button>
                     {% endif %}
@@ -399,21 +454,25 @@
         <div class="request-card card-labor" style="animation-delay: 0.3s;">
             <div class="card-details">
                 <h4>{{ booking.laborer.user.name }}</h4>
-                <p><i class="fas fa-calendar-check"></i> {{ booking.booking_date }} at {{ booking.start_time|time:"h:i A" }}</p>
+                <p><i class="fas fa-calendar-check"></i> {{ booking.booking_date }} at {{ booking.start_time|time:"h:i
+                    A" }}</p>
                 <p><i class="fas fa-business-time"></i> <strong>{% trans "Duration:" %}</strong> {{ booking.duration }}
                     {% trans "Hours/Days" %}</p>
             </div>
             <div style="text-align: right;">
                 <div class="price-tag">Rs. {{ booking.total_cost }}</div>
+                <br>
                 <span class="status-badge status-{{ booking.status }}">{{ booking.status }}</span>
-                {% if booking.status == 'Pending' %}
-                <form method="POST" action="{% url 'cancel_booking' 'labor' booking.id %}" class="btn-group">
-                    {% csrf_token %}
-                    <button type="submit" class="action-btn btn-cancel">
-                        <i class="fas fa-trash-can"></i> {% trans "Cancel Request" %}
-                    </button>
-                </form>
-                {% endif %}
+                <div class="btn-group">
+                    {% if booking.status == 'Pending' %}
+                    <form method="POST" action="{% url 'cancel_booking' 'labor' booking.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="action-btn btn-cancel">
+                            <i class="fas fa-trash-can"></i> {% trans "Cancel Request" %}
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
             </div>
         </div>
         {% endfor %}
@@ -431,15 +490,18 @@
             </div>
             <div style="text-align: right;">
                 <div class="price-tag">Rs. {{ booking.total_cost }}</div>
+                <br>
                 <span class="status-badge status-{{ booking.status }}">{{ booking.status }}</span>
-                {% if booking.status == 'Pending' %}
-                <form method="POST" action="{% url 'cancel_booking' 'shop' booking.id %}" class="btn-group">
-                    {% csrf_token %}
-                    <button type="submit" class="action-btn btn-cancel">
-                        <i class="fas fa-times"></i> {% trans "Cancel Order" %}
-                    </button>
-                </form>
-                {% endif %}
+                <div class="btn-group">
+                    {% if booking.status == 'Pending' %}
+                    <form method="POST" action="{% url 'cancel_booking' 'shop' booking.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="action-btn btn-cancel">
+                            <i class="fas fa-times"></i> {% trans "Cancel Order" %}
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
             </div>
         </div>
         {% endfor %}
@@ -457,15 +519,18 @@
                     }} ({{ booking.duration_months }} Months)</p>
             </div>
             <div style="text-align: right;">
-                <span class="status-badge status-{{ booking.status }}">{{ booking.status }}</span>
-                {% if booking.status == 'Pending' %}
-                <form method="POST" action="{% url 'cancel_booking' 'lease' booking.id %}" class="btn-group">
-                    {% csrf_token %}
-                    <button type="submit" class="action-btn btn-cancel">
-                        <i class="fas fa-ban"></i> {% trans "Cancel" %}
-                    </button>
-                </form>
-                {% endif %}
+                <span class="status-badge status-{{ booking.status }}" style="margin-bottom: 10px;">{{ booking.status
+                    }}</span>
+                <div class="btn-group">
+                    {% if booking.status == 'Pending' %}
+                    <form method="POST" action="{% url 'cancel_booking' 'lease' booking.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="action-btn btn-cancel">
+                            <i class="fas fa-ban"></i> {% trans "Cancel" %}
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
             </div>
         </div>
         {% endfor %}
@@ -473,13 +538,19 @@
 
         {% endif %}
 
-        <a href="{% url 'main_home' %}" class="back-link"><i class="fas fa-arrow-left"></i>
-            {% trans "Back to Services" %}
-        </a>
+        <div style="text-align: center;">
+            <a href="{% url 'main_home' %}" class="back-link"><i class="fas fa-arrow-left"></i> {% trans "Back to
+                Services" %}</a>
+        </div>
     </div>
 
+    <script>
+        document.querySelectorAll('[data-toast]').forEach((toast) => {
+            window.setTimeout(() => {
+                toast.remove();
+            }, 4200);
+        });
+    </script>
 </body>
 
 </html>
-
-
