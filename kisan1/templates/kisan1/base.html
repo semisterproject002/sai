@@ -1,6 +1,6 @@
 ﻿{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ LANGUAGE_CODE|default:'en' }}">
 
 <head>
     <meta charset="UTF-8">
@@ -14,8 +14,21 @@
     {% block background_overlay %}
     {% endblock %}
 
+    {% include 'kisan1/partials/language_toggle.html' %}
+
     {% block content %}
     {% endblock %}
+
+    {% if messages %}
+    <div class="toast-stack" aria-live="polite" aria-atomic="true">
+        {% for message in messages %}
+        <div class="toast-notice toast-{{ message.level_tag|default:'info' }}" data-toast>
+            <span class="toast-message">{{ message }}</span>
+            <button type="button" class="toast-close" data-toast-close aria-label="Close">x</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
     <script src="{% static 'js/floating_particles.js' %}"></script>
     <script>
@@ -34,6 +47,20 @@
             document.querySelectorAll('.menu-container.is-open').forEach((container) => {
                 container.classList.remove('is-open');
             });
+        });
+
+        document.querySelectorAll('[data-toast]').forEach((toast) => {
+            const closeButton = toast.querySelector('[data-toast-close]');
+            const dismiss = () => {
+                toast.classList.add('toast-hidden');
+                window.setTimeout(() => toast.remove(), 250);
+            };
+
+            if (closeButton) {
+                closeButton.addEventListener('click', dismiss);
+            }
+
+            window.setTimeout(dismiss, 4200);
         });
     </script>
 </body>
