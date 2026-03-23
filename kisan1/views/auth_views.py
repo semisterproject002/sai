@@ -60,7 +60,7 @@ def _assign_group_for_role(role):
 
 
 def welcome(request):
-    return render(request, 'kisan1/welcome.html')
+    return render(request, 'kisan1/welcome.html', {'show_language_selector': True})
 
 
 def register_choice(request):

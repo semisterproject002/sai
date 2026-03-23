@@ -14,7 +14,9 @@
     {% block background_overlay %}
     {% endblock %}
 
+    {% if show_language_selector %}
     {% include 'kisan1/partials/language_toggle.html' %}
+    {% endif %}
 
     {% block content %}
     {% endblock %}

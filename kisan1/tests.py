@@ -443,6 +443,21 @@ class KisanAsaraTests(TestCase):
         response = self.client.get(reverse('welcome'))
         self.assertEqual(response.status_code, 200)
 
+    def test_language_selector_is_only_visible_on_welcome_page(self):
+        welcome_response = self.client.get(reverse('welcome'))
+        self.assertEqual(welcome_response.status_code, 200)
+        self.assertContains(welcome_response, '<div class="language-switcher">', html=False)
+
+        self._set_session(self.tools_user, 'tools')
+        dashboard_response = self.client.get(reverse('dashboard', kwargs={'role': 'tools'}))
+        self.assertEqual(dashboard_response.status_code, 200)
+        self.assertNotContains(dashboard_response, 'id="lang-switch"', html=False)
+
+        self._set_session(self.farmer, 'farmer')
+        home_response = self.client.get(reverse('main_home'))
+        self.assertEqual(home_response.status_code, 200)
+        self.assertNotContains(home_response, 'id="lang-switch"', html=False)
+
     def test_cart_checkout_saves_shop_order(self):
         farmer = UserRegistration.objects.get(mobile="9999999999", role="farmer")
         shop_user = UserRegistration.objects.create(name="Store", mobile="8888888888", role="pesticide", is_verified=True)

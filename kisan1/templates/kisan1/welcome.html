@@ -1,6 +1,6 @@
 ﻿{% load i18n %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ LANGUAGE_CODE|default:'en' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -177,6 +177,7 @@
     
     <div class="hero-bg"></div>
 
+    {% if show_language_selector %}
     <div class="language-switcher">
         <form action="{% url 'set_language' %}" method="post">
             {% csrf_token %}
@@ -193,6 +194,7 @@
             </select>
         </form>
     </div>
+    {% endif %}
 
     <div class="container">
         <div class="welcome-text">
