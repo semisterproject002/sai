@@ -115,6 +115,82 @@ class KisanAsaraTests(TestCase):
         self.assertRedirects(response, reverse('verify_otp'))
         self.assertTrue(self.client.session.get('reg_otp'))
 
+    def test_duplicate_registration_same_mobile_and_role_is_blocked(self):
+        response = self.client.post(reverse('tractor_register'), {
+            'name': 'Changed Tractor User',
+            'mobile': self.tractor_user.mobile,
+            'age': '32',
+            'pincode': '503001',
+            'state': 'Telangana',
+            'district': 'Nizamabad',
+            'mandal': 'Armoor',
+            'village': 'Perkit',
+            'base_wage': '700',
+            'driving_license': 'TS0520230000123',
+            'experience': '5',
+            'services': ['Ploughing'],
+            'exp_Ploughing': '3',
+            'wage_Ploughing': '700',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'This user has been registered.')
+        self.assertFalse(self.client.session.get('reg_otp'))
+        self.assertEqual(UserRegistration.objects.filter(mobile=self.tractor_user.mobile, role='tractor').count(), 1)
+
+    def test_same_details_with_different_mobile_can_register(self):
+        response = self.client.post(reverse('tractor_register'), {
+            'name': self.tractor_user.name,
+            'mobile': '9234509876',
+            'age': '32',
+            'pincode': '503001',
+            'state': 'Telangana',
+            'district': 'Nizamabad',
+            'mandal': 'Armoor',
+            'village': 'Perkit',
+            'base_wage': '700',
+            'driving_license': 'TS0520230000456',
+            'experience': '5',
+            'services': ['Ploughing'],
+            'exp_Ploughing': '3',
+            'wage_Ploughing': '700',
+        })
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('verify_otp'))
+        self.assertTrue(self.client.session.get('reg_otp'))
+
+    def test_duplicate_registration_is_blocked_at_otp_verification(self):
+        otp_code, otp_payload = create_otp_session_payload()
+        session = self.client.session
+        session['reg_otp'] = otp_payload
+        session['reg_core'] = {
+            'name': 'Changed Tractor User',
+            'age': 32,
+            'mobile': self.tractor_user.mobile,
+            'role': 'tractor',
+            'pincode': '503001',
+            'state': 'Telangana',
+            'district': 'Nizamabad',
+            'mandal': 'Armoor',
+            'village': 'Perkit',
+            'is_verified': False,
+        }
+        session['reg_profile'] = {
+            'experience': '5',
+            'wage_amount': '700',
+            'driving_license': 'TS0520230000123',
+            'services': 'Ploughing (3 Yrs @ Rs. 700/hr)',
+            'gender': 'Not Specified',
+        }
+        session.save()
+
+        response = self.client.post(reverse('verify_otp'), {'otp': otp_code}, follow=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'This user has been registered.')
+        self.assertEqual(UserRegistration.objects.filter(mobile=self.tractor_user.mobile, role='tractor').count(), 1)
+
     def test_farmer_registration_invalid_name_blocked(self):
         response = self.client.post(reverse('farmer_register'), {'name': 'Ramesh123', 'mobile': '9123456789'})
         self.assertEqual(response.status_code, 200)
@@ -155,6 +231,40 @@ class KisanAsaraTests(TestCase):
         self.assertContains(response, 'trackingDialogBackdrop')
         self.assertContains(response, 'data-track-kind="shop"')
         self.assertContains(response, 'google.com/maps/dir/')
+
+    def test_farmer_booking_renders_tool_and_tractor_tracking_dialogs(self):
+        ToolRentalBooking.objects.create(
+            farmer=self.farmer,
+            tool_shop=self.tools_profile,
+            tools_selected='Tractor: 2 hrs',
+            receive_date='2026-03-24',
+            return_date='2026-03-25',
+            home_delivery=True,
+            delivery_location='Kazipet, Hanamkonda, Telangana',
+            total_cost=1000,
+            status='Confirmed',
+        )
+        TractorBooking.objects.create(
+            farmer=self.farmer,
+            tractor_owner=self.tractor_profile,
+            booking_date='2026-03-24',
+            start_time='09:00',
+            duration_hours=3,
+            location='Field 12, Kazipet, Hanamkonda, Telangana',
+            total_cost=2400,
+            status='Confirmed',
+        )
+
+        self._set_session(self.farmer, 'farmer')
+        response = self.client.get(reverse('farmer_booking'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-track-kind="tool"')
+        self.assertContains(response, 'data-track-kind="tractor"')
+        self.assertContains(response, 'Track Tools')
+        self.assertContains(response, 'Track Tractor')
+        self.assertContains(response, 'Open Tool Route')
+        self.assertContains(response, 'Open Tractor Route')
 
     def test_farmer_booking_template_has_no_alert_calls(self):
         template_path = Path(__file__).resolve().parent / 'templates' / 'kisan1' / 'farmer_booking.html'

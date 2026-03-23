@@ -652,13 +652,13 @@
                         data-track-service="{% trans 'Tool Rental' %}"
                         data-track-reference="TLR-{{ booking.id|stringformat:'04d' }}"
                         data-track-provider="{{ booking.tool_shop.shop_name }}"
-                        data-track-details="{{ booking.tools_selected }}"
+                        data-track-details="{{ booking.tools_selected }} | {{ booking.receive_date }} {% trans 'to' %} {{ booking.return_date }}"
                         data-track-status="{{ booking.status }}"
                         data-track-created="{{ booking.created_at|date:'M d, Y h:i A' }}"
                         data-track-source="{% if booking.tool_shop.user.village %}{{ booking.tool_shop.user.village }}{% endif %}{% if booking.tool_shop.user.mandal %}, {{ booking.tool_shop.user.mandal }}{% endif %}{% if booking.tool_shop.user.district %}, {{ booking.tool_shop.user.district }}{% endif %}{% if booking.tool_shop.user.state %}, {{ booking.tool_shop.user.state }}{% endif %}"
                         data-track-destination="{% if booking.home_delivery and booking.delivery_location %}{{ booking.delivery_location }}{% else %}{% if booking.tool_shop.user.village %}{{ booking.tool_shop.user.village }}{% endif %}{% if booking.tool_shop.user.mandal %}, {{ booking.tool_shop.user.mandal }}{% endif %}{% if booking.tool_shop.user.district %}, {{ booking.tool_shop.user.district }}{% endif %}{% if booking.tool_shop.user.state %}, {{ booking.tool_shop.user.state }}{% endif %}{% endif %}"
                         data-track-map-mode="{% if booking.home_delivery and booking.delivery_location %}route{% else %}location{% endif %}">
-                        <i class="fas fa-location-dot"></i> {% trans "Track Booking" %}
+                        <i class="fas fa-location-dot"></i> {% trans "Track Tools" %}
                     </button>
                     {% endif %}
                 </div>
@@ -703,7 +703,7 @@
                         data-track-source="{% if booking.tractor_owner.user.village %}{{ booking.tractor_owner.user.village }}{% endif %}{% if booking.tractor_owner.user.mandal %}, {{ booking.tractor_owner.user.mandal }}{% endif %}{% if booking.tractor_owner.user.district %}, {{ booking.tractor_owner.user.district }}{% endif %}{% if booking.tractor_owner.user.state %}, {{ booking.tractor_owner.user.state }}{% endif %}"
                         data-track-destination="{{ booking.location }}"
                         data-track-map-mode="route">
-                        <i class="fas fa-map-location-dot"></i> {% trans "Track Location" %}
+                        <i class="fas fa-map-location-dot"></i> {% trans "Track Tractor" %}
                     </button>
                     {% endif %}
                 </div>
@@ -933,33 +933,38 @@
             shopConfirmedText: "{% trans 'Use the route below to view the dispatch point and delivery destination.' %}",
             shopCompletedTitle: "{% trans 'Order Delivered' %}",
             shopCompletedText: "{% trans 'The order has been completed for the shown destination.' %}",
-            tractorPendingTitle: "{% trans 'Travel Route Pending' %}",
-            tractorPendingText: "{% trans 'The tractor owner has not confirmed the travel route yet.' %}",
-            tractorConfirmedTitle: "{% trans 'Driver Heading To Your Field' %}",
-            tractorConfirmedText: "{% trans 'Open the route to view the provider location and your work location.' %}",
+            tractorPendingTitle: "{% trans 'Tractor Route Pending' %}",
+            tractorPendingText: "{% trans 'Tracking becomes active after the tractor owner confirms the service route.' %}",
+            tractorConfirmedTitle: "{% trans 'Tractor On Service Route' %}",
+            tractorConfirmedText: "{% trans 'Use the route below to view the tractor location and your field destination.' %}",
             tractorCompletedTitle: "{% trans 'Tractor Service Completed' %}",
-            tractorCompletedText: "{% trans 'The tractor request is marked completed.' %}",
-            toolPendingTitle: "{% trans 'Dispatch Pending' %}",
-            toolPendingText: "{% trans 'Tracking becomes active after the rental booking is confirmed.' %}",
-            toolConfirmedTitle: "{% trans 'Tools Ready For Tracking' %}",
-            toolConfirmedText: "{% trans 'Open the map to view the provider location or delivery route.' %}",
-            toolCompletedTitle: "{% trans 'Tool Booking Completed' %}",
-            toolCompletedText: "{% trans 'This rental request has been completed.' %}",
+            tractorCompletedText: "{% trans 'The tractor request has been completed for the selected field.' %}",
+            toolPendingTitle: "{% trans 'Tool Dispatch Pending' %}",
+            toolPendingText: "{% trans 'Tracking becomes active after the tool owner confirms the request.' %}",
+            toolConfirmedTitle: "{% trans 'Tools In Delivery Process' %}",
+            toolConfirmedText: "{% trans 'Use the route below to view the tool dispatch point and delivery destination.' %}",
+            toolCompletedTitle: "{% trans 'Tool Delivery Completed' %}",
+            toolCompletedText: "{% trans 'The tool request has reached its recorded destination.' %}",
             shopPendingNote: "{% trans 'The shop has not confirmed your order yet. The dialog shows the seller location and your delivery destination so tracking is clear once dispatch starts.' %}",
             shopConfirmedNote: "{% trans 'The shop confirmed your order. This route shows where the products are dispatching from and where they should reach.' %}",
             shopCompletedNote: "{% trans 'This shop order is completed. The last known delivery route is still available for reference.' %}",
-            tractorPendingNote: "{% trans 'The tractor provider has not confirmed the trip yet. Once confirmed, this dialog shows the travel route to your field.' %}",
-            tractorConfirmedNote: "{% trans 'The tractor provider accepted the request. Use the map route to see the provider location and service destination.' %}",
-            tractorCompletedNote: "{% trans 'The tractor booking is completed. The route remains visible for service history.' %}",
-            toolPendingNote: "{% trans 'The rental request is still waiting for confirmation. This dialog keeps the source and destination ready for tracking.' %}",
-            toolConfirmedNote: "{% trans 'The tool rental is confirmed. If home delivery is selected, you can open the delivery route from here.' %}",
-            toolCompletedNote: "{% trans 'This tool booking is completed. The last recorded location information is shown for reference.' %}",
+            tractorPendingNote: "{% trans 'The tractor provider has not confirmed the travel route yet. Once confirmed, this dialog shows the tractor source point and your service destination.' %}",
+            tractorConfirmedNote: "{% trans 'The tractor provider confirmed the request. This route shows where the tractor is coming from and where it should reach.' %}",
+            tractorCompletedNote: "{% trans 'This tractor booking is completed. The last known service route remains available for reference.' %}",
+            toolPendingNote: "{% trans 'The tool request is still waiting for confirmation. Once approved, this dialog shows the dispatch point and delivery destination.' %}",
+            toolConfirmedNote: "{% trans 'The tool owner confirmed the request. This route shows where the tools are dispatching from and where they should reach.' %}",
+            toolCompletedNote: "{% trans 'This tool request is completed. The last known delivery location information remains available for reference.' %}",
+            shopRouteLabel: "{% trans 'Open Delivery Route' %}",
+            tractorRouteLabel: "{% trans 'Open Tractor Route' %}",
+            toolRouteLabel: "{% trans 'Open Tool Route' %}",
+            viewShopLocationLabel: "{% trans 'View Shop Location' %}",
         };
 
         const normalizeText = (value) => (value || '').trim();
 
-        const getTrackingStage = (kind, status) => {
+        const getTrackingStage = (kind, status, mode) => {
             const normalizedStatus = normalizeText(status);
+            const normalizedMode = normalizeText(mode);
             const stageMap = {
                 shop: {
                     pending: [trackingCopy.shopPendingTitle, trackingCopy.shopPendingText, trackingCopy.shopPendingNote],
@@ -979,6 +984,20 @@
             };
 
             const currentMap = stageMap[kind] || stageMap.shop;
+            if (kind === 'tool' && normalizedMode === 'location' && normalizedStatus === 'Confirmed') {
+                return [
+                    "{% trans 'Tool Pickup Location Ready' %}",
+                    "{% trans 'Open the location below to view the tool shop pickup point.' %}",
+                    "{% trans 'The tool owner confirmed the request. Open the location below to view the current pickup point for your tools.' %}",
+                ];
+            }
+            if (kind === 'tool' && normalizedMode === 'location' && normalizedStatus === 'Completed') {
+                return [
+                    "{% trans 'Tool Pickup Completed' %}",
+                    "{% trans 'The tool pickup was completed for the selected booking.' %}",
+                    "{% trans 'This tool request is completed. The last known pickup location remains available for reference.' %}",
+                ];
+            }
             if (normalizedStatus === 'Rejected') {
                 return [trackingCopy.rejectedTitle, trackingCopy.rejectedText, trackingCopy.rejectedText];
             }
@@ -994,8 +1013,9 @@
             return currentMap.pending;
         };
 
-        const getTimelineSteps = (kind, status) => {
+        const getTimelineSteps = (kind, status, mode) => {
             const normalizedStatus = normalizeText(status);
+            const normalizedMode = normalizeText(mode);
             let finalTitle = trackingCopy.shopPendingTitle;
             let finalText = trackingCopy.shopPendingText;
 
@@ -1012,8 +1032,13 @@
                     finalTitle = trackingCopy.tractorConfirmedTitle;
                     finalText = trackingCopy.tractorConfirmedText;
                 } else if (kind === 'tool') {
-                    finalTitle = trackingCopy.toolConfirmedTitle;
-                    finalText = trackingCopy.toolConfirmedText;
+                    if (normalizedMode === 'location') {
+                        finalTitle = "{% trans 'Tool Pickup Location Ready' %}";
+                        finalText = "{% trans 'Open the map below to view the tool pickup point.' %}";
+                    } else {
+                        finalTitle = trackingCopy.toolConfirmedTitle;
+                        finalText = trackingCopy.toolConfirmedText;
+                    }
                 } else {
                     finalTitle = trackingCopy.shopConfirmedTitle;
                     finalText = trackingCopy.shopConfirmedText;
@@ -1023,8 +1048,13 @@
                     finalTitle = trackingCopy.tractorCompletedTitle;
                     finalText = trackingCopy.tractorCompletedText;
                 } else if (kind === 'tool') {
-                    finalTitle = trackingCopy.toolCompletedTitle;
-                    finalText = trackingCopy.toolCompletedText;
+                    if (normalizedMode === 'location') {
+                        finalTitle = "{% trans 'Tool Pickup Completed' %}";
+                        finalText = "{% trans 'The pickup booking is completed for the selected tool request.' %}";
+                    } else {
+                        finalTitle = trackingCopy.toolCompletedTitle;
+                        finalText = trackingCopy.toolCompletedText;
+                    }
                 } else {
                     finalTitle = trackingCopy.shopCompletedTitle;
                     finalText = trackingCopy.shopCompletedText;
@@ -1086,9 +1116,9 @@
             return steps;
         };
 
-        const renderTimeline = (kind, status) => {
+        const renderTimeline = (kind, status, mode) => {
             progressContainer.replaceChildren();
-            getTimelineSteps(kind, status).forEach((step) => {
+            getTimelineSteps(kind, status, mode).forEach((step) => {
                 const wrapper = document.createElement('div');
                 wrapper.className = `tracking-step ${step.state}`;
 
@@ -1126,14 +1156,31 @@
             return `https://www.google.com/maps/search/?${params.toString()}`;
         };
 
+        const getMapLabel = (kind, mode) => {
+            if (normalizeText(mode) === 'route') {
+                if (kind === 'tractor') {
+                    return trackingCopy.tractorRouteLabel;
+                }
+                if (kind === 'tool') {
+                    return trackingCopy.toolRouteLabel;
+                }
+                return trackingCopy.shopRouteLabel;
+            }
+            if (kind === 'tool') {
+                return trackingCopy.viewShopLocationLabel;
+            }
+            return trackingCopy.mapLocation;
+        };
+
         const openTrackingDialog = (button) => {
             const data = button.dataset;
             const kind = normalizeText(data.trackKind);
             const status = normalizeText(data.trackStatus);
             const source = normalizeText(data.trackSource);
             const destination = normalizeText(data.trackDestination);
-            const [summaryTitle, summaryText, noteText] = getTrackingStage(kind, status);
-            const mapUrl = buildMapUrl(source, destination, normalizeText(data.trackMapMode));
+            const mapMode = normalizeText(data.trackMapMode);
+            const [summaryTitle, summaryText, noteText] = getTrackingStage(kind, status, mapMode);
+            const mapUrl = buildMapUrl(source, destination, mapMode);
 
             dialogKicker.textContent = summaryTitle;
             dialogFields.summary.textContent = summaryText;
@@ -1147,13 +1194,11 @@
             dialogFields.details.textContent = normalizeText(data.trackDetails);
             dialogFields.note.textContent = noteText;
 
-            renderTimeline(kind, status);
+            renderTimeline(kind, status, mapMode);
 
             if (mapUrl) {
                 mapButton.hidden = false;
-                mapLabel.textContent = normalizeText(data.trackMapMode) === 'route'
-                    ? trackingCopy.mapRoute
-                    : trackingCopy.mapLocation;
+                mapLabel.textContent = getMapLabel(kind, mapMode);
                 mapButton.onclick = () => window.open(mapUrl, '_blank', 'noopener,noreferrer');
             } else {
                 mapButton.hidden = true;

@@ -4,6 +4,7 @@ import logging
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.models import Group
+from django.db import IntegrityError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 
@@ -51,6 +52,14 @@ EXPERIENCE_FIELD_LABELS = {
     'exp_Transport': _('Transport experience'),
     'exp_Harvesting': _('Harvesting experience'),
     'exp_Sowing': _('Sowing experience'),
+}
+REGISTRATION_ROUTE_NAMES = {
+    'farmer': 'farmer_register',
+    'tractor': 'tractor_register',
+    'labor': 'labor_register',
+    'lease': 'lease_register',
+    'tools': 'tools_register',
+    'pesticide': 'register_pesticide',
 }
 
 
@@ -145,6 +154,28 @@ def _set_otp_back_target(request, session_key):
     request.session[session_key] = request.path
 
 
+def _render_registration(request, template_name, context=None):
+    base_context = {'show_language_selector': False}
+    if context:
+        base_context.update(context)
+    return render(request, template_name, base_context)
+
+
+def _clear_registration_session(request):
+    for key in ('reg_otp', 'reg_core', 'reg_profile', 'reg_otp_attempts', 'otp_back_url'):
+        request.session.pop(key, None)
+
+
+def _existing_registration_for_role(mobile, role):
+    return UserRegistration.objects.filter(mobile=mobile, role=role).first()
+
+
+def _redirect_existing_registration(request, role):
+    _clear_registration_session(request)
+    messages.warning(request, _("This user has been registered."))
+    return redirect(REGISTRATION_ROUTE_NAMES.get(role, 'register_choice'))
+
+
 def otp_back(request):
     target = request.session.get('otp_back_url') or request.session.get('login_otp_back_url')
     unsafe_targets = {'/verify-otp/', '/verify-otp-login/', request.path}
@@ -159,15 +190,19 @@ def handle_registration(request, role, template_name):
 
         if not name or not mobile:
             messages.error(request, _("All fields are required!"))
-            return render(request, template_name)
+            return _render_registration(request, template_name)
 
         if not is_valid_name(name):
             messages.error(request, _("Name should contain only letters and spaces (minimum 3 characters)."))
-            return render(request, template_name)
+            return _render_registration(request, template_name)
 
         if not is_valid_mobile(mobile):
             messages.error(request, _("Enter a valid 10-digit mobile number."))
-            return render(request, template_name)
+            return _render_registration(request, template_name)
+
+        if _existing_registration_for_role(mobile, role):
+            messages.warning(request, _("This user has been registered."))
+            return _render_registration(request, template_name)
 
         invalid_common_response = _validate_common_registration_fields(
             request,
@@ -203,7 +238,7 @@ def handle_registration(request, role, template_name):
             passbook = (request.POST.get('passbook') or '').strip()
             if not gender or not passbook or not PASSBOOK_RE.fullmatch(passbook):
                 messages.error(request, _("Enter a valid farmer passbook number (T followed by 11 digits)."))
-                return render(request, template_name)
+                return _render_registration(request, template_name)
             profile_data = {
                 'gender': gender,
                 'passbook_number': passbook,
@@ -212,7 +247,7 @@ def handle_registration(request, role, template_name):
             selected_services = request.POST.getlist('services')
             if not selected_services:
                 messages.error(request, _("Please select at least one service."))
-                return render(request, template_name)
+                return _render_registration(request, template_name)
                 
             services_list = []
             for service in selected_services:
@@ -220,7 +255,7 @@ def handle_registration(request, role, template_name):
                 wage = (request.POST.get(f'wage_{service}') or '').strip()
                 if not exp or not wage:
                     messages.error(request, _("Please provide both experience and hourly rate for every selected tractor service."))
-                    return render(request, template_name)
+                    return _render_registration(request, template_name)
                 services_list.append(f"{service} ({exp} Yrs @ Rs. {wage}/hr)")
 
             driving_license = (request.POST.get('driving_license') or '').strip()
@@ -233,7 +268,7 @@ def handle_registration(request, role, template_name):
                 or not _is_positive_int(experience, min_value=0, max_value=100)
             ):
                 messages.error(request, _("Please provide valid tractor registration details."))
-                return render(request, template_name)
+                return _render_registration(request, template_name)
 
             profile_data = {
                 'experience': experience,
@@ -246,14 +281,14 @@ def handle_registration(request, role, template_name):
             selected_skills = request.POST.getlist('skills')
             if not selected_skills:
                 messages.error(request, _("Please select at least one skill."))
-                return render(request, template_name)
+                return _render_registration(request, template_name)
                 
             skills_with_exp = []
             for skill in selected_skills:
                 exp = (request.POST.get(f'exp_{skill}') or '').strip()
                 if not exp:
                     messages.error(request, _("Please provide experience for every selected skill."))
-                    return render(request, template_name)
+                    return _render_registration(request, template_name)
                 skills_with_exp.append(f"{skill} ({exp} Yrs)")
 
             gender = (request.POST.get('gender') or '').strip()
@@ -261,7 +296,7 @@ def handle_registration(request, role, template_name):
             wage_type = (request.POST.get('wage_type') or '').strip()
             if not gender or not wage_type or not _is_positive_int(wage_amount, min_value=1):
                 messages.error(request, _("Please provide valid labor registration details."))
-                return render(request, template_name)
+                return _render_registration(request, template_name)
 
             profile_data = {
                 'skills': ", ".join(skills_with_exp),
@@ -273,7 +308,7 @@ def handle_registration(request, role, template_name):
             selected_soils = request.POST.getlist('soils')
             if not selected_soils:
                 messages.error(request, _("Please select at least one soil type."))
-                return render(request, template_name)
+                return _render_registration(request, template_name)
                 
             soil_details_list = []
             for soil in selected_soils:
@@ -293,7 +328,7 @@ def handle_registration(request, role, template_name):
                 land_value = 0
             if land_value <= 0 or not water_resource or not passbook or not LEASE_PASSBOOK_RE.fullmatch(passbook.upper()):
                 messages.error(request, _("Please provide valid lease registration details."))
-                return render(request, template_name)
+                return _render_registration(request, template_name)
 
             profile_data = {
                 'total_land': total_land,
@@ -306,7 +341,7 @@ def handle_registration(request, role, template_name):
             selected_tools = request.POST.getlist('tools')
             if not selected_tools:
                 messages.error(request, _("Please select at least one tool."))
-                return render(request, template_name)
+                return _render_registration(request, template_name)
                 
             tools_with_cost = []
             for tool in selected_tools:
@@ -319,7 +354,7 @@ def handle_registration(request, role, template_name):
             shop_name = (request.POST.get('shop_name') or '').strip()
             if not shop_name:
                 messages.error(request, _("Shop name is required for tools registration."))
-                return render(request, template_name)
+                return _render_registration(request, template_name)
 
             profile_data = {
                 'shop_name': shop_name,
@@ -330,7 +365,7 @@ def handle_registration(request, role, template_name):
             selected_products = request.POST.getlist('products')
             if not selected_products:
                 messages.error(request, _("Please select at least one product."))
-                return render(request, template_name)
+                return _render_registration(request, template_name)
                 
             shop_name = (request.POST.get('shop_name') or '').strip()
             license_id = (request.POST.get('license_id') or '').strip()
@@ -342,7 +377,7 @@ def handle_registration(request, role, template_name):
                 or not _is_positive_int(since_years, min_value=0, max_value=100)
             ):
                 messages.error(request, _("Please provide valid fertilizer shop registration details."))
-                return render(request, template_name)
+                return _render_registration(request, template_name)
 
             profile_data = {
                 'shop_name': shop_name,
@@ -356,7 +391,7 @@ def handle_registration(request, role, template_name):
 
         if not can_send_otp(mobile, context='registration'):
             messages.error(request, _('Too many OTP requests. Please wait a few minutes and try again.'))
-            return render(request, template_name)
+            return _render_registration(request, template_name)
 
         request.session.pop('login_otp_attempts', None)
 
@@ -373,7 +408,7 @@ def handle_registration(request, role, template_name):
         send_real_otp_sms(mobile, otp_code)
         return redirect('verify_otp')
 
-    return render(request, template_name)
+    return _render_registration(request, template_name)
 
 
 def farmer_register(request):
@@ -437,19 +472,21 @@ def verify_otp(request):
             core = request.session.get('reg_core')
             prof = request.session.get('reg_profile')
 
+            if not core or not prof:
+                _clear_registration_session(request)
+                messages.error(request, _('Registration session is incomplete. Please register again.'))
+                return redirect('register_choice')
+
+            if _existing_registration_for_role(core['mobile'], core['role']):
+                return _redirect_existing_registration(request, core['role'])
+
             identity, identity_created = UserIdentity.objects.get_or_create(mobile=core['mobile'])
             defaults = dict(core)
             defaults['identity'] = identity
-            user, created = UserRegistration.objects.get_or_create(
-                mobile=core['mobile'],
-                role=core['role'],
-                defaults=defaults,
-            )
-
-            if not created:
-                for key, value in core.items():
-                    setattr(user, key, value)
-                user.identity = identity
+            try:
+                user = UserRegistration.objects.create(**defaults)
+            except IntegrityError:
+                return _redirect_existing_registration(request, core['role'])
 
             location_obj, location_created = Location.objects.get_or_create(
                 pincode=core.get('pincode') or '',
@@ -483,9 +520,7 @@ def verify_otp(request):
             request.session['otp_verified'] = True
             request.session['user_id'] = user.id
             request.session['role_group'] = django_group.name
-            request.session.pop('reg_otp_attempts', None)
-            request.session.pop('reg_otp', None)
-            request.session.pop('otp_back_url', None)
+            _clear_registration_session(request)
 
             if core['role'] == 'farmer':
                 return redirect('main_home')
