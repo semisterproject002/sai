@@ -104,6 +104,31 @@ class ToolsProfile(models.Model):
     rent_per_hour = models.PositiveIntegerField(default=0)
 
 
+class ToolInventory(models.Model):
+    RATE_UNIT_CHOICES = (
+        ('hr', 'Per Hour'),
+        ('day', 'Per Day'),
+    )
+
+    owner = models.ForeignKey(UserRegistration, on_delete=models.CASCADE, related_name='tool_inventory')
+    tool_name = models.CharField(max_length=100)
+    rate = models.PositiveIntegerField(default=0)
+    rate_unit = models.CharField(max_length=10, choices=RATE_UNIT_CHOICES, default='hr')
+    is_available = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('owner', 'tool_name')
+        indexes = [
+            models.Index(fields=['owner', 'tool_name']),
+            models.Index(fields=['owner', 'is_available']),
+        ]
+
+    def __str__(self):
+        return f"{self.tool_name} ({self.owner.name})"
+
+
 class Order(models.Model):
     user = models.ForeignKey(UserRegistration, on_delete=models.CASCADE, related_name='orders') 
     provider = models.ForeignKey(UserRegistration, on_delete=models.CASCADE, related_name='received_orders')

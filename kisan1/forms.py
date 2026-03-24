@@ -7,6 +7,7 @@ from kisan1.models import (
     LaborBooking,
     PesticideInventory,
     PesticideProfile,
+    ToolInventory,
     TractorBooking,
 )
 
@@ -128,3 +129,31 @@ class ServiceSettingsForm(forms.Form):
     rate = forms.IntegerField(min_value=1)
     is_available = forms.BooleanField(required=False)
     service_status = forms.ChoiceField(choices=[('Active', 'Active'), ('Paused', 'Paused')])
+
+
+class ToolInventoryForm(forms.ModelForm):
+    class Meta:
+        model = ToolInventory
+        fields = ['tool_name', 'rate', 'rate_unit']
+        widgets = {
+            'tool_name': forms.TextInput(attrs={'class': 'form-control', 'maxlength': 100}),
+            'rate': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'rate_unit': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+    def clean_tool_name(self):
+        value = (self.cleaned_data.get('tool_name') or '').strip()
+        if len(value) < 2:
+            raise ValidationError(_('Tool name must be at least 2 characters.'))
+        return value
+
+    def clean_rate(self):
+        value = self.cleaned_data.get('rate')
+        if value is None or value <= 0:
+            raise ValidationError(_('Rate must be greater than 0.'))
+        return value
+
+
+class ToolRateUpdateForm(forms.Form):
+    tool_id = forms.IntegerField(min_value=1)
+    rate = forms.IntegerField(min_value=1)

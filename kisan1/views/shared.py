@@ -2,17 +2,16 @@ import logging
 import os
 import re
 import secrets
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import requests
 from django.conf import settings
-from django.utils.crypto import constant_time_compare, salted_hmac
 from django.core.cache import cache
-from django.utils import timezone
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from django.utils.crypto import constant_time_compare, salted_hmac
 
 from kisan1.models import UserRegistration
-
 
 DEBUG_TRUE_VALUES = {'1', 'true', 'yes', 'on'}
 logger = logging.getLogger(__name__)
@@ -52,22 +51,27 @@ def login_attempt_limit_key(mobile, context='login_attempts'):
 def can_send_otp(mobile, context='generic'):
     key = otp_rate_limit_key(mobile, context)
     attempts = cache.get(key, 0)
-    if attempts >= settings.OTP_REQUEST_LIMIT:
+    limit = getattr(settings, 'OTP_REQUEST_LIMIT', 5)
+    window = getattr(settings, 'OTP_REQUEST_WINDOW_SECONDS', 300)
+
+    if attempts >= limit:
         return False
-    cache.set(key, attempts + 1, timeout=settings.OTP_REQUEST_WINDOW_SECONDS)
+    cache.set(key, attempts + 1, timeout=window)
     return True
 
 
 def can_attempt_login(mobile, context='generic'):
     key = login_attempt_limit_key(mobile, context)
     attempts = cache.get(key, 0)
-    return attempts < settings.LOGIN_ATTEMPT_LIMIT
+    limit = getattr(settings, 'LOGIN_ATTEMPT_LIMIT', 5)
+    return attempts < limit
 
 
 def register_failed_login_attempt(mobile, context='generic'):
     key = login_attempt_limit_key(mobile, context)
     attempts = cache.get(key, 0)
-    cache.set(key, attempts + 1, timeout=settings.LOGIN_ATTEMPT_WINDOW_SECONDS)
+    window = getattr(settings, 'LOGIN_ATTEMPT_WINDOW_SECONDS', 300)
+    cache.set(key, attempts + 1, timeout=window)
 
 
 def clear_login_attempts(mobile, context='generic'):
@@ -87,15 +91,22 @@ def create_otp_session_payload():
 def get_otp_remaining_seconds(payload):
     if not payload or isinstance(payload, str):
         return None
+
+    if isinstance(payload, tuple) and len(payload) == 2:
+        payload = payload[1]
+
     expires_at = payload.get('expires_at')
     if not expires_at:
         return None
+
     try:
-        expires_at_dt = timezone.datetime.fromisoformat(expires_at)
+        expires_at_dt = datetime.fromisoformat(expires_at)
     except ValueError:
         return None
+
     if timezone.is_naive(expires_at_dt):
         expires_at_dt = timezone.make_aware(expires_at_dt, timezone.get_current_timezone())
+
     remaining = int((expires_at_dt - timezone.now()).total_seconds())
     return max(0, remaining)
 
@@ -110,28 +121,35 @@ def is_otp_expired(payload):
 def is_otp_valid(payload, provided_otp):
     if not payload or not provided_otp:
         return False
+
+    if isinstance(payload, tuple) and len(payload) == 2:
+        payload = payload[1]
+
     provided = str(provided_otp).strip()
+
     if isinstance(payload, str):
         return constant_time_compare(payload, provided)
+
     expires_at = payload.get('expires_at')
     if not expires_at:
         return False
-    expires_at_dt = timezone.datetime.fromisoformat(expires_at)
+
+    expires_at_dt = datetime.fromisoformat(expires_at)
     if timezone.is_naive(expires_at_dt):
         expires_at_dt = timezone.make_aware(expires_at_dt, timezone.get_current_timezone())
+
     if timezone.now() > expires_at_dt:
         return False
+
     code_hash = payload.get('code_hash')
     if not code_hash:
         legacy_code = payload.get('code')
         return bool(legacy_code and constant_time_compare(str(legacy_code), provided))
+
     return constant_time_compare(code_hash, _hash_otp_code(provided))
 
 
-
-
 def announce_otp(mobile, otp, context='generic'):
-    """Log OTP event and optionally print to terminal for operator visibility."""
     logger.info('%s OTP generated for %s', context.upper(), mobile)
     if getattr(settings, 'OTP_PRINT_TO_TERMINAL', False):
         print(f"[OTP][{context}] mobile={mobile} code={otp}")
@@ -146,11 +164,13 @@ def send_real_otp_sms(mobile, otp):
     url = "https://www.fast2sms.com/dev/bulkV2"
     querystring = {
         "authorization": api_token,
-        "variables_values": otp,
-        "route": "otp",
+        "message": f"Your Kisan Asara test OTP is {otp}",
+        "language": "english",
+        "route": "q",
         "numbers": mobile,
     }
     headers = {'cache-control': "no-cache"}
+
     try:
         response = requests.request("GET", url, headers=headers, params=querystring, timeout=10)
         logger.info('SMS API Response: %s', response.text)

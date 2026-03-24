@@ -14,6 +14,7 @@ from kisan1.models import (
     Location,
     LeaseProfile,
     PesticideProfile,
+    ToolInventory,
     ToolsProfile,
     TractorProfile,
     UserIdentity,
@@ -344,12 +345,19 @@ def handle_registration(request, role, template_name):
                 return _render_registration(request, template_name)
                 
             tools_with_cost = []
+            tool_inventory = []
             for tool in selected_tools:
-                cost = request.POST.get(f'cost_{tool}')
-                if cost:
+                cost = (request.POST.get(f'cost_{tool}') or '').strip()
+                if cost and _is_positive_int(cost, min_value=1):
                     tools_with_cost.append(f"{tool} (Rs. {cost}/hr)")
+                    tool_inventory.append({
+                        'tool_name': tool,
+                        'rate': int(cost),
+                        'rate_unit': 'hr',
+                    })
                 else:
-                    tools_with_cost.append(tool)
+                    messages.error(request, _("Please provide a valid hourly rent for every selected tool."))
+                    return _render_registration(request, template_name)
 
             shop_name = (request.POST.get('shop_name') or '').strip()
             if not shop_name:
@@ -360,6 +368,7 @@ def handle_registration(request, role, template_name):
                 'shop_name': shop_name,
                 'tools_type': " | ".join(tools_with_cost),
                 'rent_per_hour': 0,
+                'tool_inventory': tool_inventory,
             }
         elif role == 'pesticide':
             selected_products = request.POST.getlist('products')
@@ -511,7 +520,19 @@ def verify_otp(request):
             elif core['role'] == 'lease':
                 LeaseProfile.objects.get_or_create(user=user, defaults=prof)
             elif core['role'] == 'tools':
-                ToolsProfile.objects.get_or_create(user=user, defaults=prof)
+                tool_defaults = dict(prof)
+                tool_inventory = tool_defaults.pop('tool_inventory', [])
+                ToolsProfile.objects.get_or_create(user=user, defaults=tool_defaults)
+                for item in tool_inventory:
+                    ToolInventory.objects.update_or_create(
+                        owner=user,
+                        tool_name=item['tool_name'],
+                        defaults={
+                            'rate': item['rate'],
+                            'rate_unit': item.get('rate_unit', 'hr'),
+                            'is_available': True,
+                        },
+                    )
             elif core['role'] == 'pesticide':
                 PesticideProfile.objects.get_or_create(user=user, defaults=prof)
 

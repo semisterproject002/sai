@@ -1,54 +1,62 @@
 from django.contrib import admin
+
 from kisan1.pincode_data import HIDDEN_PINCODES
 
 from .models import (
-    UserRegistration, 
-    FarmerProfile, 
-    TractorProfile, 
-    LaborProfile, 
-    LeaseProfile, 
-    ToolsProfile, 
-    Order, 
-    PesticideProfile,
-    ShopOrder,
+    FarmerProfile,
     LaborBooking,
-    TractorBooking,
-    ToolRentalBooking,
+    LaborProfile,
     LeaseLandRequest,
-    PincodeMapping # ✅ Added the new model here
+    LeaseProfile,
+    Order,
+    PesticideProfile,
+    PincodeMapping,
+    ShopOrder,
+    ToolInventory,
+    ToolRentalBooking,
+    ToolsProfile,
+    TractorBooking,
+    TractorProfile,
+    UserRegistration,
 )
+
 
 class FarmerInline(admin.StackedInline):
     model = FarmerProfile
     can_delete = False
     verbose_name_plural = 'Farmer Details'
 
+
 class TractorInline(admin.StackedInline):
     model = TractorProfile
     can_delete = False
     verbose_name_plural = 'Tractor Details'
+
 
 class LaborInline(admin.StackedInline):
     model = LaborProfile
     can_delete = False
     verbose_name_plural = 'Labor Details'
 
+
 class LeaseInline(admin.StackedInline):
     model = LeaseProfile
     can_delete = False
     verbose_name_plural = 'Land Details'
+
 
 class ToolsInline(admin.StackedInline):
     model = ToolsProfile
     can_delete = False
     verbose_name_plural = 'Tools Details'
 
+
 class PesticideInline(admin.StackedInline):
     model = PesticideProfile
     can_delete = False
     verbose_name_plural = 'Shop Details'
 
-# ✅ User Registration Block
+
 @admin.register(UserRegistration)
 class UserRegistrationAdmin(admin.ModelAdmin):
     list_display = ('name', 'role', 'mobile', 'district', 'created_at')
@@ -56,7 +64,7 @@ class UserRegistrationAdmin(admin.ModelAdmin):
     search_fields = ('name', 'mobile')
     inlines = [FarmerInline, TractorInline, LaborInline, LeaseInline, ToolsInline, PesticideInline]
 
-# ✅ New Pincode Mapping Block
+
 @admin.register(PincodeMapping)
 class PincodeMappingAdmin(admin.ModelAdmin):
     list_display = ('pincode', 'village', 'mandal', 'district', 'state')
@@ -67,9 +75,11 @@ class PincodeMappingAdmin(admin.ModelAdmin):
         queryset = super().get_queryset(request)
         return queryset.exclude(pincode__in=[str(value) for value in HIDDEN_PINCODES])
 
+
 admin.site.register(Order)
 admin.site.register(ShopOrder)
 admin.site.register(LaborBooking)
 admin.site.register(TractorBooking)
 admin.site.register(ToolRentalBooking)
 admin.site.register(LeaseLandRequest)
+admin.site.register(ToolInventory)

@@ -24,6 +24,9 @@ urlpatterns = [
     path('main-home/', views.main_home, name='main_home'),
     path('dashboard/<str:role>/', views.dashboard, name='dashboard'),
     path('dashboard/<str:role>/service-settings/', views.update_service_settings, name='update_service_settings'),
+    path('dashboard/tools/add-products/', views.tool_add_products, name='tool_add_products'),
+    path('dashboard/tools/inventory/', views.tool_inventory, name='tool_inventory'),
+    path('dashboard/tools/change-rate/', views.tool_change_rate, name='tool_change_rate'),
     
     # --- PRO CART & TRACKING PAGE ---
     path('cart/', views.cart_view, name='cart'),

@@ -25,6 +25,7 @@ from .models import (
     PesticideProfile,
     PincodeMapping,
     ShopOrder,
+    ToolInventory,
     ToolRentalBooking,
     ToolsProfile,
     TractorBooking,
@@ -56,6 +57,20 @@ class KisanAsaraTests(TestCase):
             user=self.tools_user,
             shop_name='Tool Hub',
             tools_type='Tractor (₹500/hr) | Harvester (₹700/hr)',
+        )
+        self.tool_inventory_tractor = ToolInventory.objects.create(
+            owner=self.tools_user,
+            tool_name='Tractor',
+            rate=500,
+            rate_unit='hr',
+            is_available=True,
+        )
+        self.tool_inventory_harvester = ToolInventory.objects.create(
+            owner=self.tools_user,
+            tool_name='Harvester',
+            rate=700,
+            rate_unit='hr',
+            is_available=True,
         )
         self.lease_profile = LeaseProfile.objects.create(user=self.lease_user, total_land=5.0)
         self.shop_profile = PesticideProfile.objects.create(
@@ -208,6 +223,25 @@ class KisanAsaraTests(TestCase):
                 self._set_session(user, role)
                 response = self.client.get(reverse('dashboard', kwargs={'role': role}))
                 self.assertEqual(response.status_code, 200)
+
+    def test_tool_management_routes_load_for_owner(self):
+        self._set_session(self.tools_user, 'tools')
+        for route in ['tool_add_products', 'tool_inventory', 'tool_change_rate']:
+            with self.subTest(route=route):
+                response = self.client.get(reverse(route))
+                self.assertEqual(response.status_code, 200)
+
+    def test_tool_owner_can_update_available_tool_rate(self):
+        self._set_session(self.tools_user, 'tools')
+        response = self.client.post(
+            reverse('tool_change_rate'),
+            {'tool_id': str(self.tool_inventory_tractor.id), 'rate': '650'},
+        )
+        self.assertRedirects(response, reverse('tool_change_rate'))
+        self.tool_inventory_tractor.refresh_from_db()
+        self.tools_profile.refresh_from_db()
+        self.assertEqual(self.tool_inventory_tractor.rate, 650)
+        self.assertIn('650', self.tools_profile.tools_type)
 
     def test_farmer_pages_load(self):
         self._set_session(self.farmer, 'farmer')

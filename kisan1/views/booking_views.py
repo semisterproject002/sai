@@ -1,5 +1,6 @@
 import re
 import logging
+from datetime import date
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Count, Sum
@@ -7,7 +8,14 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.core.paginator import Paginator
 from django.utils.translation import gettext as _
-from kisan1.forms import LaborBookingRequestForm, ServiceSettingsForm, ShopItemForm, TractorBookingRequestForm
+from kisan1.forms import (
+    LaborBookingRequestForm,
+    ServiceSettingsForm,
+    ShopItemForm,
+    ToolInventoryForm,
+    ToolRateUpdateForm,
+    TractorBookingRequestForm,
+)
 from kisan1.models import Inventory
 
 from kisan1.models import (
@@ -21,6 +29,7 @@ from kisan1.models import (
     PesticideInventory,
     PesticideProfile,
     ShopOrder,
+    ToolInventory,
     ToolRentalBooking,
     ToolsProfile,
     TractorBooking,
@@ -98,6 +107,162 @@ def _parse_positive_int(value, default=1):
     return parsed if parsed > 0 else default
 
 
+_TOOL_RATE_PATTERN = re.compile(
+    r'(?P<tool>.+?)\s*\(\s*Rs\.?\s*(?P<rate>\d+)\s*/\s*(?P<unit>hr|day)\s*\)',
+    re.IGNORECASE,
+)
+
+
+def _normalize_tool_name(value):
+    return ' '.join((value or '').strip().split())
+
+
+def _parse_tool_inventory_string(raw_value):
+    parsed_items = []
+    for raw_item in (raw_value or '').split('|'):
+        cleaned_item = raw_item.strip()
+        if not cleaned_item:
+            continue
+        match = _TOOL_RATE_PATTERN.search(cleaned_item)
+        if match:
+            parsed_items.append({
+                'tool_name': _normalize_tool_name(match.group('tool')),
+                'rate': int(match.group('rate')),
+                'rate_unit': match.group('unit').lower(),
+            })
+            continue
+        parsed_items.append({
+            'tool_name': _normalize_tool_name(cleaned_item),
+            'rate': 0,
+            'rate_unit': 'hr',
+        })
+    return parsed_items
+
+
+def _serialize_tool_inventory(items):
+    serialized = []
+    for item in items:
+        if isinstance(item, dict):
+            tool_name = item.get('tool_name')
+            rate = item.get('rate', 0)
+            rate_unit = item.get('rate_unit', 'hr')
+        else:
+            tool_name = item.tool_name
+            rate = item.rate
+            rate_unit = item.rate_unit
+        normalized_name = _normalize_tool_name(tool_name)
+        if not normalized_name:
+            continue
+        serialized.append(f"{normalized_name} (Rs. {rate}/{rate_unit})")
+    return " | ".join(serialized)
+
+
+def _sync_tools_profile_inventory(tool_profile):
+    inventory_items = list(ToolInventory.objects.filter(owner=tool_profile.user).order_by('tool_name'))
+    serialized_inventory = _serialize_tool_inventory(inventory_items)
+    default_rate = next((item.rate for item in inventory_items if item.rate_unit == 'hr'), 0)
+    ToolsProfile.objects.filter(pk=tool_profile.pk).update(
+        tools_type=serialized_inventory,
+        rent_per_hour=default_rate,
+    )
+    tool_profile.tools_type = serialized_inventory
+    tool_profile.rent_per_hour = default_rate
+    return inventory_items
+
+
+def _ensure_tool_inventory_seeded(tool_profile):
+    inventory_qs = ToolInventory.objects.filter(owner=tool_profile.user).order_by('tool_name')
+    if inventory_qs.exists():
+        return list(inventory_qs)
+
+    parsed_items = _parse_tool_inventory_string(tool_profile.tools_type)
+    for item in parsed_items:
+        ToolInventory.objects.update_or_create(
+            owner=tool_profile.user,
+            tool_name=item['tool_name'],
+            defaults={
+                'rate': item['rate'],
+                'rate_unit': item.get('rate_unit', 'hr'),
+                'is_available': True,
+            },
+        )
+    return _sync_tools_profile_inventory(tool_profile)
+
+
+def _extract_tool_names_from_booking_text(booking_text):
+    tool_names = []
+    for entry in (booking_text or '').split('|'):
+        chunk = entry.strip()
+        if not chunk:
+            continue
+        tool_name = chunk.split(':', 1)[0].strip()
+        if tool_name:
+            tool_names.append(_normalize_tool_name(tool_name))
+    return tool_names
+
+
+def _get_rented_tool_names(user_profile, on_date=None):
+    active_date = on_date or date.today()
+    rented_names = set()
+    bookings = ToolRentalBooking.objects.filter(
+        tool_shop__user=user_profile,
+        status=BookingStatus.CONFIRMED,
+        receive_date__lte=active_date,
+        return_date__gte=active_date,
+    )
+    for booking in bookings:
+        rented_names.update(_extract_tool_names_from_booking_text(booking.tools_selected))
+    return rented_names
+
+
+def _get_overlapping_tool_booking_names(user_profile, start_date, end_date):
+    overlapping_names = set()
+    bookings = ToolRentalBooking.objects.filter(
+        tool_shop__user=user_profile,
+        status=BookingStatus.CONFIRMED,
+        receive_date__lte=end_date,
+        return_date__gte=start_date,
+    )
+    for booking in bookings:
+        overlapping_names.update(_extract_tool_names_from_booking_text(booking.tools_selected))
+    return overlapping_names
+
+
+def _get_tool_inventory_rows(user_profile):
+    tool_profile = get_object_or_404(ToolsProfile, user=user_profile)
+    inventory_items = _ensure_tool_inventory_seeded(tool_profile)
+    rented_names = _get_rented_tool_names(user_profile)
+
+    rows = []
+    available_items = []
+    for item in inventory_items:
+        status = 'Rented' if item.tool_name in rented_names else 'Available'
+        row = {
+            'item': item,
+            'status': status,
+            'rate_label': f"Rs {item.rate}/{item.rate_unit}",
+            'rate_suffix': 'hr' if item.rate_unit == 'hr' else 'day',
+        }
+        rows.append(row)
+        if item.is_available and status == 'Available':
+            available_items.append(row)
+
+    return {
+        'tool_profile': tool_profile,
+        'tool_inventory': rows,
+        'available_tool_inventory': available_items,
+    }
+
+
+def _build_tools_dashboard_context(user_profile, *, open_panel=None):
+    tool_context = _get_tool_inventory_rows(user_profile)
+    tool_context.update({
+        'open_panel': open_panel,
+        'work_requests': ToolRentalBooking.objects.filter(tool_shop__user=user_profile).order_by('-created_at'),
+    })
+    return tool_context
+
+
 def _sync_booking_and_order_status(booking, *, provider, service_type, status):
     booking.status = status
     booking.save(update_fields=['status'])
@@ -135,12 +300,22 @@ def main_home(request):
         lands_qs = lands_qs.filter(user__name__icontains=q)
         pesticides_qs = pesticides_qs.filter(user__name__icontains=q)
 
+    labor_page = Paginator(labors_qs, 12).get_page(request.GET.get('labors_page'))
+    tractor_page = Paginator(tractors_qs, 12).get_page(request.GET.get('tractors_page'))
+    tool_page = Paginator(tools_qs, 12).get_page(request.GET.get('tools_page'))
+    land_page = Paginator(lands_qs, 12).get_page(request.GET.get('lands_page'))
+    pesticide_page = Paginator(pesticides_qs, 12).get_page(request.GET.get('pesticides_page'))
+
+    for tool_profile in tool_page.object_list:
+        _ensure_tool_inventory_seeded(tool_profile)
+        _sync_tools_profile_inventory(tool_profile)
+
     return render(request, 'kisan1/main_home.html', {
-        'labors': Paginator(labors_qs, 12).get_page(request.GET.get('labors_page')),
-        'tractors': Paginator(tractors_qs, 12).get_page(request.GET.get('tractors_page')),
-        'tools': Paginator(tools_qs, 12).get_page(request.GET.get('tools_page')),
-        'lands': Paginator(lands_qs, 12).get_page(request.GET.get('lands_page')),
-        'pesticides': Paginator(pesticides_qs, 12).get_page(request.GET.get('pesticides_page')),
+        'labors': labor_page,
+        'tractors': tractor_page,
+        'tools': tool_page,
+        'lands': land_page,
+        'pesticides': pesticide_page,
         'filters': {'district': district, 'q': q},
         'farmer': farmer,
     })
@@ -218,7 +393,7 @@ def dashboard(request, role):
     elif role == 'tractor':
         context['work_requests'] = TractorBooking.objects.filter(tractor_owner__user=user_profile).order_by('-created_at')
     elif role == 'tools':
-        context['work_requests'] = ToolRentalBooking.objects.filter(tool_shop__user=user_profile).order_by('-created_at')
+        context.update(_build_tools_dashboard_context(user_profile))
     elif role == 'lease':
         context['work_requests'] = LeaseLandRequest.objects.filter(land__user=user_profile).order_by('-created_at')
     elif role == 'pesticide':
@@ -292,6 +467,97 @@ def dashboard(request, role):
         'pesticide': 'kisan1/pfs_dashboard.html',
     }
     return render(request, templates[role], context)
+
+
+def _render_tools_dashboard(request, user_profile, *, open_panel=None):
+    context = {
+        'user': user_profile,
+        'role': 'tools',
+        'current_rate': _get_service_settings(user_profile, 'tools'),
+        'service_status': user_profile.service_status,
+        'is_available': user_profile.is_available,
+    }
+    context.update(_build_tools_dashboard_context(user_profile, open_panel=open_panel))
+    return render(request, 'kisan1/dashboard_tools.html', context)
+
+
+@session_login_required
+@role_required('tools')
+def tool_add_products(request):
+    user_profile = get_object_or_404(UserRegistration, mobile=request.session['mobile'], role='tools')
+    if request.method == 'POST':
+        tool_form = ToolInventoryForm(request.POST)
+        if not tool_form.is_valid():
+            messages.error(request, _('Please provide a valid tool name, rate, and billing unit.'))
+        else:
+            tool_name = tool_form.cleaned_data['tool_name']
+            existing_item = ToolInventory.objects.filter(owner=user_profile, tool_name__iexact=tool_name).first()
+            defaults = {
+                'rate': tool_form.cleaned_data['rate'],
+                'rate_unit': tool_form.cleaned_data['rate_unit'],
+                'is_available': True,
+            }
+            if existing_item:
+                existing_item.tool_name = tool_name
+                existing_item.rate = defaults['rate']
+                existing_item.rate_unit = defaults['rate_unit']
+                existing_item.is_available = True
+                existing_item.save(update_fields=['tool_name', 'rate', 'rate_unit', 'is_available', 'updated_at'])
+                messages.success(
+                    request,
+                    _("Updated '%(tool_name)s' in your tool inventory.") % {'tool_name': existing_item.tool_name},
+                )
+            else:
+                ToolInventory.objects.create(owner=user_profile, tool_name=tool_name, **defaults)
+                messages.success(
+                    request,
+                    _("Added '%(tool_name)s' to your tool inventory.") % {'tool_name': tool_name},
+                )
+            tool_profile = get_object_or_404(ToolsProfile, user=user_profile)
+            _sync_tools_profile_inventory(tool_profile)
+            return redirect('tool_add_products')
+    return _render_tools_dashboard(request, user_profile, open_panel='add-products')
+
+
+@session_login_required
+@role_required('tools')
+def tool_inventory(request):
+    user_profile = get_object_or_404(UserRegistration, mobile=request.session['mobile'], role='tools')
+    return _render_tools_dashboard(request, user_profile, open_panel='inventory')
+
+
+@session_login_required
+@role_required('tools')
+def tool_change_rate(request):
+    user_profile = get_object_or_404(UserRegistration, mobile=request.session['mobile'], role='tools')
+    if request.method == 'POST':
+        form = ToolRateUpdateForm(request.POST)
+        if not form.is_valid():
+            messages.error(request, _('Please provide a valid tool and updated rate.'))
+            return redirect('tool_change_rate')
+
+        tool_item = get_object_or_404(ToolInventory, id=form.cleaned_data['tool_id'], owner=user_profile)
+        rented_names = _get_rented_tool_names(user_profile)
+        if tool_item.tool_name in rented_names:
+            messages.error(
+                request,
+                _("'%(tool_name)s' is currently rented and its rate cannot be changed right now.") % {
+                    'tool_name': tool_item.tool_name,
+                },
+            )
+            return redirect('tool_change_rate')
+
+        tool_item.rate = form.cleaned_data['rate']
+        tool_item.save(update_fields=['rate', 'updated_at'])
+        tool_profile = get_object_or_404(ToolsProfile, user=user_profile)
+        _sync_tools_profile_inventory(tool_profile)
+        messages.success(
+            request,
+            _("Updated rental rate for '%(tool_name)s'.") % {'tool_name': tool_item.tool_name},
+        )
+        return redirect('tool_change_rate')
+
+    return _render_tools_dashboard(request, user_profile, open_panel='change-rate')
 
 @session_login_required
 @role_required('farmer')
@@ -418,6 +684,7 @@ def book_tractor(request, tractor_id):
 @role_required('farmer')
 def book_tool(request, tool_id):
     tool_shop = get_object_or_404(ToolsProfile, id=tool_id)
+    inventory_items = _ensure_tool_inventory_seeded(tool_shop)
     if request.method == 'POST':
         if not check_login(request):
             messages.error(request, _("Please login to book services."))
@@ -430,38 +697,68 @@ def book_tool(request, tool_id):
         blocked = _reject_self_booking(request, farmer, tool_shop.user)
         if blocked:
             return blocked
-        receive_date = request.POST.get('receive_date')
-        return_date = request.POST.get('return_date')
 
-        tool_prices = {}
-        if tool_shop.tools_type:
-            for item in tool_shop.tools_type.split('|'):
-                match = re.search(r'([A-Za-z]+)\s*\(Rs\.?\s*(\d+)/hr\)', item)
-                if match:
-                    tool_prices[match.group(1)] = int(match.group(2))
-
-        tools_list = []
-        total_cost = 0
-        for tool in ['Tractor', 'Harvester', 'Plough', 'Rotavator']:
-            if request.POST.get(f'tool_{tool}'):
-                hours_raw = request.POST.get(f'hours_{tool}', '0')
-                try:
-                    hours = int(hours_raw) if hours_raw.strip() else 0
-                except ValueError:
-                    hours = 0
-                if hours > 0:
-                    price_per_hour = tool_prices.get(tool, 0)
-                    total_cost += hours * price_per_hour
-                    tools_list.append(f"{tool} ({hours} hrs @ Rs. {price_per_hour}/hr)")
-
-        if not tools_list:
-            messages.error(request, _("Please select at least one tool and enter the required hours."))
+        receive_date_raw = (request.POST.get('receive_date') or '').strip()
+        return_date_raw = (request.POST.get('return_date') or '').strip()
+        try:
+            receive_date = date.fromisoformat(receive_date_raw)
+            return_date = date.fromisoformat(return_date_raw)
+        except ValueError:
+            messages.error(request, _("Please choose valid receiving and return dates."))
             return redirect('book_tool', tool_id=tool_id)
 
-        tools_selected = ", ".join(tools_list)
+        if return_date < receive_date:
+            messages.error(request, _("Return date must be on or after the receiving date."))
+            return redirect('book_tool', tool_id=tool_id)
+
+        overlapping_names = _get_overlapping_tool_booking_names(tool_shop.user, receive_date, return_date)
+        tools_list = []
+        total_cost = 0
+
+        for item in inventory_items:
+            legacy_tool_key = f'tool_{item.tool_name}'
+            if not (request.POST.get(f'tool_{item.id}') or request.POST.get(legacy_tool_key)):
+                continue
+
+            duration_raw = (
+                request.POST.get(f'duration_{item.id}')
+                or request.POST.get(f'hours_{item.tool_name}')
+                or request.POST.get(f'days_{item.tool_name}')
+            )
+            duration = _parse_positive_int(duration_raw, default=0)
+            if duration <= 0:
+                continue
+            if item.rate <= 0:
+                messages.error(
+                    request,
+                    _("'%(tool_name)s' does not have a valid rental rate yet.") % {'tool_name': item.tool_name},
+                )
+                return redirect('book_tool', tool_id=tool_id)
+            if not item.is_available or item.tool_name in overlapping_names:
+                messages.error(
+                    request,
+                    _("'%(tool_name)s' is already booked for the selected dates.") % {'tool_name': item.tool_name},
+                )
+                return redirect('book_tool', tool_id=tool_id)
+
+            unit_label = 'hrs' if item.rate_unit == 'hr' else 'days'
+            total_cost += duration * item.rate
+            tools_list.append(f"{item.tool_name}: {duration} {unit_label} @ Rs. {item.rate}/{item.rate_unit}")
+
+        if not tools_list:
+            messages.error(request, _("Please select at least one tool and enter the required hours or days."))
+            return redirect('book_tool', tool_id=tool_id)
+
+        tools_selected = " | ".join(tools_list)
         home_delivery = request.POST.get('home_delivery') == 'on'
         if home_delivery:
-            delivery_location = f"{request.POST.get('state')}, {request.POST.get('district')}, {request.POST.get('mandal')}, {request.POST.get('village')}"
+            delivery_parts = [
+                (request.POST.get('village') or '').strip(),
+                (request.POST.get('mandal') or '').strip(),
+                (request.POST.get('district') or '').strip(),
+                (request.POST.get('state') or '').strip(),
+            ]
+            delivery_location = ", ".join([part for part in delivery_parts if part]) or "Home Delivery Requested"
         else:
             delivery_location = "Pickup from Shop"
 
@@ -488,7 +785,15 @@ def book_tool(request, tool_id):
         request.session['success_msg'] = _("Tools are booked, but please wait for confirmation by the owner.")
         return redirect('order_success')
 
-    return render(request, 'kisan1/book_tool.html', {'tool_shop': tool_shop})
+    available_now = _get_rented_tool_names(tool_shop.user)
+    available_tools = [
+        item for item in inventory_items
+        if item.is_available and item.tool_name not in available_now
+    ]
+    return render(request, 'kisan1/book_tool.html', {
+        'tool_shop': tool_shop,
+        'available_tools': available_tools,
+    })
 
 
 @session_login_required
@@ -650,6 +955,21 @@ def accept_tool_booking(request, booking_id):
         return redirect('login')
     booking = get_object_or_404(ToolRentalBooking, id=booking_id)
     if request.method == 'POST':
+        selected_names = set(_extract_tool_names_from_booking_text(booking.tools_selected))
+        overlapping_names = _get_overlapping_tool_booking_names(
+            booking.tool_shop.user,
+            booking.receive_date,
+            booking.return_date,
+        )
+        conflicts = sorted(selected_names.intersection(overlapping_names))
+        if conflicts:
+            messages.error(
+                request,
+                _("Cannot confirm this booking because these tools are already rented: %(tools)s.") % {
+                    'tools': ', '.join(conflicts),
+                },
+            )
+            return redirect('dashboard', role='tools')
         _sync_booking_and_order_status(
             booking,
             provider=booking.tool_shop.user,
