@@ -402,12 +402,13 @@ def dashboard(request, role):
             if not shop_profile:
                 messages.error(request, _('Complete P&F registration first to manage inventory.'))
             elif 'add_product' in request.POST:
-                item_form = ShopItemForm(request.POST)
+                item_form = ShopItemForm(request.POST, request.FILES)
                 if not item_form.is_valid():
                     messages.error(request, _('Please provide valid product, category, market price, shop price, and stock quantity.'))
                 else:
                     item_name = item_form.cleaned_data['item_name']
                     category = item_form.cleaned_data['category']
+                    image = item_form.cleaned_data.get('image')
                     market_price = item_form.cleaned_data['market_price']
                     price = item_form.cleaned_data['price']
                     stock_quantity = item_form.cleaned_data['stock_quantity']
@@ -416,15 +417,18 @@ def dashboard(request, role):
                     inventory_item = None
                     created = False
                     for normalized_category in normalized_categories:
+                        defaults = {
+                            'market_price': market_price,
+                            'price': price,
+                            'stock_quantity': stock_quantity,
+                        }
+                        if image:
+                            defaults['image'] = image
                         inventory_item, item_created = PesticideInventory.objects.update_or_create(
                             shop=user_profile,
                             item_name=item_name,
                             category=normalized_category,
-                            defaults={
-                                'market_price': market_price,
-                                'price': price,
-                                'stock_quantity': stock_quantity,
-                            },
+                            defaults=defaults,
                         )
                         created = created or item_created
 
